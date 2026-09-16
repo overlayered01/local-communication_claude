@@ -88,3 +88,5 @@ LLM 답변 품질은 `llmcomm judge`로 자연스러움, 한국어 정확성, �
 | MeloTTS import 깨짐 | `python-mecab-ko`의 `mecab/`가 NTFS에서 `MeCab/`(mecab-python3)와 충돌 | python-mecab-ko를 설치하지 않음. Kiwi shim 사용 |
 | Ollama 다음 모델 VRAM 오염 | 이전 모델이 keep_alive로 GPU에 잔류 | `close()`에서 keep_alive=0 후 `/api/ps` 폴링으로 언로드 확인 |
 | VRAM 절대값이 6GB부터 시작 | 데스크톱/브라우저 사용량 | 유휴 기준선 대비 `vram_delta_mb` 기록 |
+| onnxruntime-gpu `cublasLt64_13.dll` 없음 | ORT 1.30은 CUDA 13 빌드, torch cu128은 CUDA 12 DLL만 번들 | `nvidia-cublas`, `nvidia-cuda-runtime`, `nvidia-cudnn-cu13` 등 pip 런타임 추가 (supertonic extra) |
+| E2E에서 한 번씩 5초 지연 | kss가 첫 flush 시점에 지연 import | 모듈 로드 시 import |

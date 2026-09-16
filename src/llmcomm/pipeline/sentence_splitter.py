@@ -8,6 +8,11 @@ from __future__ import annotations
 
 import re
 
+try:  # kss import costs ~5s (loads models); pay it at startup, never inside a conversation turn
+    import kss as _kss
+except Exception:  # pragma: no cover
+    _kss = None
+
 _EMOJI = re.compile(
     "[\U0001F000-\U0001FAFF\U00002600-\U000027BF⭐⭕‼⁉️‍]+"
 )
@@ -55,10 +60,10 @@ class StreamSentenceSplitter:
         self.buf = self._pending = ""
         if not rest or not _HAS_WORD.search(rest):
             return []
+        if _kss is None:
+            return [rest]
         try:
-            import kss
-
-            parts = [s.strip() for s in kss.split_sentences(rest) if s.strip()]
+            parts = [s.strip() for s in _kss.split_sentences(rest) if s.strip()]
             return parts or [rest]
         except Exception:
             return [rest]

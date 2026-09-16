@@ -32,7 +32,8 @@ def _load_prompt_map() -> dict[str, dict]:
         for line in f.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 d = json.loads(line)
-                m[d["id"]] = d
+                if "user" in d or "messages" in d:  # skip TTS sentence sets (they share ids like "long")
+                    m[d["id"]] = d
     return m
 
 
