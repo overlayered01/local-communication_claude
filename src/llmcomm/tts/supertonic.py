@@ -47,14 +47,28 @@ class SupertonicTTS(TTSEngine):
             raise ImportError("pip install supertonic  (or: uv sync --extra supertonic)") from e
         Path(self.model_dir).mkdir(parents=True, exist_ok=True)
         if self.device == "cuda":
-            # Package hardcodes CPU; the list object is shared with loader.py, so mutate in place.
+            from llmcomm.core.gpu import register_cuda_dlls
+
+            register_cuda_dlls()
             import onnxruntime as ort
             from supertonic import config as sconf
 
             if "CUDAExecutionProvider" not in ort.get_available_providers():
                 raise RuntimeError("CUDAExecutionProvider unavailable: uv pip install onnxruntime-gpu (replaces onnxruntime)")
+            # Package hardcodes CPU; the list object is shared with loader.py, so mutate in place.
             sconf.DEFAULT_ONNX_PROVIDERS[:] = ["CUDAExecutionProvider", "CPUExecutionProvider"]
         self._tts = TTS(model=self.model, model_dir=self.model_dir, auto_download=self.auto_download)
+        if self.device == "cuda":
+            import onnxruntime as ort
+
+            sessions = [v for v in vars(self._tts).values() if isinstance(v, ort.InferenceSession)]
+            if not sessions:  # sessions may live one level down
+                for v in vars(self._tts).values():
+                    if hasattr(v, "__dict__"):
+                        sessions += [x for x in vars(v).values() if isinstance(x, ort.InferenceSession)]
+            used = {s.get_providers()[0] for s in sessions}
+            if used != {"CUDAExecutionProvider"}:
+                raise RuntimeError(f"Supertonic did not initialize on CUDA (providers={used}); check cuDNN/cuBLAS DLLs")
 
     def _style(self, voice: str):
         if voice not in self._styles:

@@ -46,10 +46,20 @@ class OllamaBackend(LLMBackend):
                 if data.get("done"):
                     break
 
-    async def unload(self) -> None:
-        """Evict the model from GPU immediately (keep_alive=0)."""
+    async def unload(self, wait_s: float = 20.0) -> None:
+        """Evict the model from GPU (keep_alive=0) and wait until Ollama reports it gone, so the next
+        benchmark's idle VRAM baseline is clean."""
+        import asyncio
+
         try:
             await self._client.post(f"{self.host}/api/chat", json={"model": self.model, "messages": [], "keep_alive": 0}, timeout=30)
+            deadline = asyncio.get_running_loop().time() + wait_s
+            while asyncio.get_running_loop().time() < deadline:
+                ps = (await self._client.get(f"{self.host}/api/ps", timeout=10)).json().get("models", [])
+                if not any(m.get("name", "").startswith(self.model.split(":")[0]) for m in ps):
+                    break
+                await asyncio.sleep(0.5)
+            await asyncio.sleep(1.0)  # let the driver release memory
         except Exception:
             pass
 

@@ -5,6 +5,37 @@ import asyncio
 import contextlib
 
 
+def register_cuda_dlls() -> None:
+    """Windows: make CUDA 12 / cuDNN 9 DLLs visible to non-torch libraries (onnxruntime-gpu, ctranslate2).
+    The torch cu12x wheel bundles them in torch/lib; importing torch also loads them into the process."""
+    import os
+    import sys
+
+    if sys.platform != "win32":
+        return
+    dirs: list[str] = []
+    try:
+        import torch  # noqa: F401
+
+        dirs.append(os.path.join(os.path.dirname(torch.__file__), "lib"))
+    except Exception:
+        pass
+    # pip-installed NVIDIA runtimes (nvidia-cublas-cu13 etc.) live in site-packages/nvidia/<lib>/bin
+    import glob
+    import site
+
+    for sp in set(site.getsitepackages() + [site.getusersitepackages()]):
+        dirs += glob.glob(os.path.join(sp, "nvidia", "*", "bin"))
+        dirs += glob.glob(os.path.join(sp, "nvidia", "*", "bin", "*"))  # cu13 layout: nvidia/cu13/bin/x86_64
+    for d in dirs:
+        if os.path.isdir(d):
+            try:
+                os.add_dll_directory(d)
+            except Exception:
+                pass
+            os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
+
+
 def read_used_mb(device_index: int = 0) -> float:
     """One-shot whole-GPU used memory in MB (0 if NVML unavailable)."""
     try:

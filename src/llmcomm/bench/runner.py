@@ -83,9 +83,13 @@ async def bench_llm(option: str, prompt_set: str = "korean_chat", repeats: int =
 
 
 async def bench_tts(option: str, prompt_set: str = "korean_tts", stt_option: str | None = None, save_audio: bool = True) -> list[BenchRecord]:
+    stt = build("stt", stt_option) if stt_option else None
+    if stt:  # load the STT model first so its VRAM is part of the idle baseline, not the TTS delta
+        import numpy as np
+
+        await stt.transcribe(np.zeros(16000, dtype=np.float32), 16000)
     idle_mb = read_used_mb()
     tts = build("tts", option)
-    stt = build("stt", stt_option) if stt_option else None
     sentences = load_prompts(prompt_set)
     records: list[BenchRecord] = []
     audio_dir = REPORTS / "audio" / option

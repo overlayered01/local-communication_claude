@@ -23,8 +23,14 @@ dependencies = [
 ollama = ["ollama>=0.4"]
 llamacpp = ["llama-cpp-python>=0.3"]
 # TTS engines (install only the ones under test)
-supertonic = ["supertonic>=1.3", "huggingface_hub>=0.30"]
-melotts = ["melotts"]  # source pinned to git below; PyPI sdist is broken
+supertonic = [
+    "supertonic>=1.3",
+    "huggingface_hub>=0.30",
+    # onnxruntime-gpu >=1.30 is built for CUDA 13; torch cu128 only bundles CUDA 12 DLLs, so ship CUDA 13 runtimes too
+    "onnxruntime-gpu>=1.30",
+    "nvidia-cublas", "nvidia-cuda-runtime", "nvidia-cufft", "nvidia-curand", "nvidia-cuda-nvrtc", "nvidia-cudnn-cu13",
+]
+melotts = ["melotts", "kiwipiepy>=0.20"]  # git source below (PyPI sdist is broken); kiwipiepy backs shims/eunjeon
 edge = ["edge-tts>=6.1"]
 # STT
 whisper = ["faster-whisper>=1.0"]

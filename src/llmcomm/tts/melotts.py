@@ -17,6 +17,13 @@ class MeloTTS(TTSEngine):
         self._model = None
 
     def _load(self):
+        import sys
+        from pathlib import Path
+
+        # Windows: g2pkk wants the unbuildable `eunjeon` package; use our Kiwi-backed shim instead.
+        shims = str(Path(__file__).resolve().parents[3] / "shims")
+        if sys.platform == "win32" and shims not in sys.path:
+            sys.path.insert(0, shims)
         try:
             from melo.api import TTS
         except ImportError as e:

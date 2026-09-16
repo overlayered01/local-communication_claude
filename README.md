@@ -76,3 +76,15 @@ LLM 답변 품질은 `llmcomm judge`로 자연스러움, 한국어 정확성, �
 - Edge TTS는 배포 후보가 아니라 "클라우드 품질은 이 정도" 기준점입니다.
 - Qwen3 계열은 `think: false`로 사고 모드를 꺼야 대화 지연이 공정하게 비교됩니다.
 - Supertonic PyPI 패키지는 CPU 프로바이더만 쓰도록 되어 있어, `device: cuda` 설정 시 어댑터가 프로바이더 목록을 교체합니다. onnxruntime-gpu가 필요합니다.
+
+## Windows 환경 이슈와 해결 (검증 중 확인)
+
+| 문제 | 원인 | 해결 (코드에 반영됨) |
+|---|---|---|
+| torch가 GPU를 못 봄 | PyPI 기본 휠이 CPU 전용 | `[tool.uv.sources]`로 cu128 인덱스 고정 |
+| faster-whisper `cublas64_12.dll not found` | ctranslate2가 CUDA DLL을 못 찾음 | `core/gpu.py: register_cuda_dlls()`가 torch/lib를 DLL 경로에 등록 |
+| onnxruntime-gpu가 조용히 CPU로 폴백 | 같은 DLL 문제 | 같은 헬퍼 호출 + CUDA 세션 여부를 검증해 실패 시 예외 |
+| MeloTTS 한국어: `eunjeon` 설치 실패 | Visual Studio 빌드 필요 | `shims/eunjeon`: Kiwi 기반 `Mecab.pos()` 대체 구현 |
+| MeloTTS import 깨짐 | `python-mecab-ko`의 `mecab/`가 NTFS에서 `MeCab/`(mecab-python3)와 충돌 | python-mecab-ko를 설치하지 않음. Kiwi shim 사용 |
+| Ollama 다음 모델 VRAM 오염 | 이전 모델이 keep_alive로 GPU에 잔류 | `close()`에서 keep_alive=0 후 `/api/ps` 폴링으로 언로드 확인 |
+| VRAM 절대값이 6GB부터 시작 | 데스크톱/브라우저 사용량 | 유휴 기준선 대비 `vram_delta_mb` 기록 |

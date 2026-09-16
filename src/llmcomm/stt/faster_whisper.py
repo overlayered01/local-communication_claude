@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from llmcomm.core.gpu import register_cuda_dlls
 from llmcomm.core.interfaces import STTEngine
 from llmcomm.tts._util import run_blocking
 
@@ -12,6 +13,7 @@ class FasterWhisperSTT(STTEngine):
         self._model = None
 
     def _load(self):
+        register_cuda_dlls()
         try:
             from faster_whisper import WhisperModel
         except ImportError as e:
