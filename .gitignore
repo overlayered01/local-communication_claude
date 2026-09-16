@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+reports/*.jsonl
+reports/audio/
+models/
+.env

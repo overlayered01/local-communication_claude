@@ -1,0 +1,4 @@
+# Windows built-in voice; zero-install floor baseline
+type: sapi
+voice: null
+rate: 0

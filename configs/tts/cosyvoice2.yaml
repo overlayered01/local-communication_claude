@@ -1,0 +1,6 @@
+type: cosyvoice
+repo_dir: models/CosyVoice
+model_dir: models/CosyVoice/pretrained_models/CosyVoice2-0.5B
+prompt_wav: data/voice_prompts/ko_female_3s.wav
+prompt_text: "안녕하세요, 오늘 하루는 어떠셨어요?"
+fp16: true

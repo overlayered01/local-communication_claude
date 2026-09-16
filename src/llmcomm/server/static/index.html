@@ -1,0 +1,57 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>llmcomm option tester</title>
+<style>
+  body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; }
+  #log { white-space: pre-wrap; border: 1px solid #ccc; padding: 1rem; min-height: 200px; }
+  select, input, button { font-size: 1rem; margin: .2rem; }
+</style>
+<h2>llmcomm option tester</h2>
+<div>LLM <select id="llm"></select> TTS <select id="tts"></select></div>
+<div><input id="msg" size="60" placeholder="메시지 입력"><button id="send">전송</button></div>
+<div id="log"></div>
+<pre id="metrics"></pre>
+<script>
+const $ = s => document.querySelector(s);
+const SYSTEM = "당신은 친근한 한국어 대화 상대입니다. 짧고 자연스럽게 답하세요.";
+let ws, history = [{ role: "system", content: SYSTEM }], reply = "", meta = null;
+const ctx = new AudioContext();
+let playAt = 0;
+
+fetch("/options").then(r => r.json()).then(o => {
+  for (const k of ["llm", "tts"]) $("#" + k).innerHTML = o[k].map(x => `<option>${x}</option>`).join("");
+});
+
+function connect() {
+  ws = new WebSocket(`ws://${location.host}/ws/chat`);
+  ws.binaryType = "arraybuffer";
+  ws.onmessage = e => {
+    if (typeof e.data === "string") {
+      const m = JSON.parse(e.data);
+      if (m.type === "text") { $("#log").textContent += m.delta; reply += m.delta; }
+      else if (m.type === "audio_meta") meta = m;
+      else if (m.type === "metrics") { $("#metrics").textContent = JSON.stringify(m, null, 1); history.push({ role: "assistant", content: reply }); }
+      return;
+    }
+    const i16 = new Int16Array(e.data);
+    const f32 = Float32Array.from(i16, x => x / 32768);
+    const buf = ctx.createBuffer(1, f32.length, meta.sample_rate);
+    buf.copyToChannel(f32, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.connect(ctx.destination);
+    const t = Math.max(ctx.currentTime, playAt);
+    src.start(t); playAt = t + buf.duration;
+  };
+}
+
+$("#send").onclick = () => {
+  if (!ws || ws.readyState !== 1) connect();
+  const c = $("#msg").value;
+  history.push({ role: "user", content: c });
+  reply = "";
+  $("#log").textContent += `\n[you] ${c}\n[bot] `;
+  const send = () => ws.send(JSON.stringify({ llm: $("#llm").value, tts: $("#tts").value, messages: history }));
+  ws.readyState === 1 ? send() : (ws.onopen = send);
+  $("#msg").value = "";
+};
+</script>

@@ -1,0 +1,5 @@
+type: melotts
+language: KR
+speaker: KR
+device: cuda
+speed: 1.0

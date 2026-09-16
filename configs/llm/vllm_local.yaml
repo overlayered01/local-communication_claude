@@ -1,0 +1,6 @@
+# Any OpenAI-compatible server (vLLM, llama.cpp server, LM Studio). Change base_url/model.
+type: openai_compat
+model: Qwen/Qwen3-14B-AWQ
+base_url: http://localhost:8000/v1
+extra:
+  temperature: 0.7

@@ -1,0 +1,4 @@
+type: supertonic
+repo_dir: models/supertonic
+voice: default
+device: cuda
