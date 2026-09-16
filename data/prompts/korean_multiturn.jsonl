@@ -1,0 +1,4 @@
+{"id": "mt_recall", "messages": [{"role": "user", "content": "나 이번 주 금요일에 제주도 가."}, {"role": "assistant", "content": "오, 좋겠다! 며칠 있다 와?"}, {"role": "user", "content": "3일. 근데 비 온다더라."}, {"role": "assistant", "content": "아쉽네. 그래도 실내에서 할 것도 많으니까."}, {"role": "user", "content": "내가 어디 간다고 했지?"}]}
+{"id": "mt_tone", "messages": [{"role": "user", "content": "야, 나 오늘 진짜 짜증나."}, {"role": "assistant", "content": "왜, 무슨 일 있었어?"}, {"role": "user", "content": "팀장이 또 퇴근 직전에 일 던졌어."}]}
+{"id": "mt_correction", "messages": [{"role": "user", "content": "내 강아지 이름은 콩이야."}, {"role": "assistant", "content": "콩이! 귀여운 이름이네."}, {"role": "user", "content": "아 미안, 콩이가 아니라 몽이야."}, {"role": "assistant", "content": "아, 몽이구나. 알겠어."}, {"role": "user", "content": "몽이 산책은 하루에 몇 번이 좋아?"}]}
+{"id": "mt_topic_switch", "messages": [{"role": "user", "content": "요즘 러닝 시작했어."}, {"role": "assistant", "content": "좋다! 얼마나 뛰어?"}, {"role": "user", "content": "3km 정도. 아 근데 그건 그렇고, 저녁 뭐 먹을까?"}]}

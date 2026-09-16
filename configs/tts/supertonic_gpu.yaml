@@ -5,3 +5,4 @@ voice: F1
 lang: ko
 total_steps: 8
 speed: 1.05
+device: cuda

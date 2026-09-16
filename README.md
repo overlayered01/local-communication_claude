@@ -25,10 +25,11 @@ reports/            results.jsonl (누적), summary.md, audio/<option>/*.wav
 ## 설치
 
 ```powershell
-uv sync                       # 기본 의존성 (Python 3.11 고정)
-uv sync --extra whisper       # STT 라운드트립 평가용
-uv sync --extra edge          # 클라우드 기준점
-# TTS 엔진은 각 어댑터 docstring의 설치 절차를 따르고 configs/tts/*.yaml 경로를 맞춥니다.
+uv sync --extra dev --extra whisper --extra edge --extra supertonic --extra melotts
+uv run python -m unidic download          # MeloTTS 일본어 사전(한국어에도 import 시 필요)
+# torch는 pyproject의 [tool.uv.sources]로 CUDA 12.8 빌드가 고정됩니다 (RTX 50xx 필수).
+# Supertonic 가중치는 첫 실행 시 models/supertonic-assets/ 로 자동 다운로드됩니다.
+# CosyVoice2는 별도 저장소 클론이 필요합니다. src/llmcomm/tts/cosyvoice.py docstring 참고.
 ```
 
 Ollama 모델:
@@ -46,6 +47,8 @@ uv run llmcomm chat --llm ollama_qwen3_14b --tts sapi_default    # 문장 단위
 uv run llmcomm bench llm ollama_qwen3_14b ollama_exaone35_7b --repeats 3
 uv run llmcomm bench tts sapi_default melotts_kr --stt whisper_turbo
 uv run llmcomm bench e2e ollama_qwen3_14b melotts_kr
+uv run llmcomm bench llm ollama_qwen3_8b --prompts korean_multiturn  # 문맥 유지 평가
+uv run llmcomm judge --judge ollama_qwen3_14b                    # LLM 답변 품질 채점 (1~5)
 uv run llmcomm report                                            # reports/summary.md 생성
 uv run llmcomm serve                                             # http://127.0.0.1:8080 웹 테스터
 ```
@@ -63,10 +66,13 @@ uv run llmcomm serve                                             # http://127.0.
 | E2E | first_audio_ms | 사용자 입력 후 첫 음성이 나오기까지. 체감 지연 |
 
 정성 평가(자연스러움, 말투, 목소리 호감도)는 `reports/audio/`의 WAV를 청취하고 별도 시트에 기록합니다.
-LLM 답변 품질은 `output_text`를 모아 강한 모델로 채점(LLM-as-judge)하거나 사람이 평가합니다.
+LLM 답변 품질은 `llmcomm judge`로 자연스러움, 한국어 정확성, 관련성, 간결성을 1~5점 채점합니다.
+채점 모델이 후보 중 하나면 자기 선호 편향이 생기므로, 가능하면 후보가 아닌 더 큰 모델을 judge로 씁니다.
 
 ## 비교 시 주의
 
 - 같은 GPU에 다른 모델이 올라가 있으면 VRAM 수치가 오염됩니다. 한 번에 한 옵션만 띄웁니다.
 - warmup 1회 후 측정하지만, 첫 프롬프트는 여전히 느릴 수 있어 `--repeats 3` 이상을 권합니다.
 - Edge TTS는 배포 후보가 아니라 "클라우드 품질은 이 정도" 기준점입니다.
+- Qwen3 계열은 `think: false`로 사고 모드를 꺼야 대화 지연이 공정하게 비교됩니다.
+- Supertonic PyPI 패키지는 CPU 프로바이더만 쓰도록 되어 있어, `device: cuda` 설정 시 어댑터가 프로바이더 목록을 교체합니다. onnxruntime-gpu가 필요합니다.

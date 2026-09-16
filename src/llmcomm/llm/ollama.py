@@ -12,7 +12,8 @@ from llmcomm.core.types import Message
 class OllamaBackend(LLMBackend):
     """Ollama native /api/chat streaming."""
 
-    def __init__(self, model: str, host: str = "http://localhost:11434", options: dict | None = None, keep_alive: str = "10m"):
+    def __init__(self, model: str, host: str = "http://localhost:11434", options: dict | None = None, keep_alive: str = "10m", think: bool | None = None):
+        self.think = think
         self.model = model
         self.host = host.rstrip("/")
         self.options = options or {}
@@ -31,6 +32,8 @@ class OllamaBackend(LLMBackend):
             "options": options,
             "keep_alive": self.keep_alive,
         }
+        if self.think is not None:
+            payload["think"] = self.think  # qwen3 etc.: disable reasoning for low-latency chat
         async with self._client.stream("POST", f"{self.host}/api/chat", json=payload) as resp:
             resp.raise_for_status()
             async for line in resp.aiter_lines():
@@ -43,5 +46,13 @@ class OllamaBackend(LLMBackend):
                 if data.get("done"):
                     break
 
+    async def unload(self) -> None:
+        """Evict the model from GPU immediately (keep_alive=0)."""
+        try:
+            await self._client.post(f"{self.host}/api/chat", json={"model": self.model, "messages": [], "keep_alive": 0}, timeout=30)
+        except Exception:
+            pass
+
     async def close(self) -> None:
+        await self.unload()
         await self._client.aclose()

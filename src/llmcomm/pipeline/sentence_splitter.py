@@ -2,13 +2,27 @@
 
 Feed deltas; get back completed sentences as soon as a terminator is seen.
 Uses a fast rule-based path (good enough for streaming); `kss` is used only on flush for leftovers.
+Sentences are cleaned for TTS (emoji / markdown removed) before they are emitted.
 """
 from __future__ import annotations
 
 import re
 
+_EMOJI = re.compile(
+    "[\U0001F000-\U0001FAFF\U00002600-\U000027BF⭐⭕‼⁉️‍]+"
+)
+_MARKDOWN = re.compile(r"(\*\*|__|`+|^#+\s*|^\s*[-*]\s+|^\s*\d+\.\s+)", re.M)
 _TERMINATORS = re.compile(r"([.!?。！？…]+[\"'”’)\]]*\s*|\n+)")
+_HAS_WORD = re.compile(r"[\w가-힣]")
 _MIN_CHARS = 6  # avoid emitting "네." alone; merge with next sentence
+
+
+def clean_for_tts(text: str) -> str:
+    """Strip emoji and markdown that TTS engines read aloud or choke on. Keeps sentence punctuation."""
+    text = _EMOJI.sub("", text)
+    text = _MARKDOWN.sub("", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return text.strip()
 
 
 class StreamSentenceSplitter:
@@ -24,10 +38,10 @@ class StreamSentenceSplitter:
             m = _TERMINATORS.search(self.buf)
             if not m:
                 break
-            sent = self.buf[: m.end()].strip()
+            sent = clean_for_tts(self.buf[: m.end()])
             self.buf = self.buf[m.end():]
-            if not sent:
-                continue
+            if not sent or not _HAS_WORD.search(sent):
+                continue  # empty, emoji-only or punctuation-only fragment
             candidate = (self._pending + " " + sent).strip() if self._pending else sent
             if len(candidate) < self.min_chars:
                 self._pending = candidate
@@ -37,9 +51,9 @@ class StreamSentenceSplitter:
         return out
 
     def flush(self) -> list[str]:
-        rest = (self._pending + " " + self.buf).strip()
+        rest = clean_for_tts((self._pending + " " + self.buf).strip())
         self.buf = self._pending = ""
-        if not rest:
+        if not rest or not _HAS_WORD.search(rest):
             return []
         try:
             import kss

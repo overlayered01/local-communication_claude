@@ -77,7 +77,7 @@ def bench_llm_cmd(options: list[str], prompts: str = "korean_chat", repeats: int
     for o in options:
         rprint(f"[bold cyan]LLM[/] {o}")
         recs = asyncio.run(bench_llm(o, prompts, repeats, max_tokens=max_tokens))
-        _show(recs, ["ttft_ms", "tokens_per_s_est", "total_ms", "vram_used_mb"])
+        _show(recs, ["ttft_ms", "tokens_per_s_est", "total_ms", "vram_delta_mb"])
 
 
 @bench.command("tts")
@@ -88,7 +88,7 @@ def bench_tts_cmd(options: list[str], prompts: str = "korean_tts", stt: Optional
     for o in options:
         rprint(f"[bold cyan]TTS[/] {o}")
         recs = asyncio.run(bench_tts(o, prompts, stt, save_audio=not no_audio))
-        _show(recs, ["total_ms", "rtf", "ms_per_char", "roundtrip_cer", "vram_used_mb"])
+        _show(recs, ["total_ms", "rtf", "ms_per_char", "roundtrip_cer", "vram_delta_mb"])
 
 
 @bench.command("e2e")
@@ -97,7 +97,7 @@ def bench_e2e_cmd(llm: str, tts: str, prompts: str = "korean_chat", max_tokens: 
     from llmcomm.bench.runner import bench_e2e
 
     recs = asyncio.run(bench_e2e(llm, tts, prompts, max_tokens=max_tokens))
-    _show(recs, ["ttft_ms", "first_sentence_ms", "first_audio_ms", "llm_done_ms", "total_ms", "audio_sec", "vram_used_mb"])
+    _show(recs, ["ttft_ms", "first_sentence_ms", "first_audio_ms", "llm_done_ms", "total_ms", "audio_sec", "vram_delta_mb"])
 
 
 @app.command()
@@ -109,6 +109,18 @@ def report(results: Path = Path("reports/results.jsonl"), out: Path = Path("repo
     out.write_text(md, encoding="utf-8")
     print(md)
     rprint(f"\n[green]written[/] {out}")
+
+
+@app.command()
+def judge(judge: str = "ollama_qwen3_14b", results: Path = Path("reports/results.jsonl")):
+    """Score LLM outputs in results.jsonl with an LLM judge (naturalness/korean/relevance/brevity, 1-5)."""
+    from llmcomm.bench.judge import judge_llm_results
+
+    summary = asyncio.run(judge_llm_results(judge, results))
+    t = Table("option", "n", "naturalness", "korean", "relevance", "brevity", "mean")
+    for opt, s in sorted(summary.items(), key=lambda kv: -kv[1]["mean"]):
+        t.add_row(opt, str(s["n"]), *(str(s[k]) for k in ("naturalness", "korean", "relevance", "brevity", "mean")))
+    rprint(t)
 
 
 @app.command()

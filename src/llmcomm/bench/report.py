@@ -7,9 +7,9 @@ from collections import defaultdict
 from pathlib import Path
 
 KEY_METRICS = {
-    "llm": ["ttft_ms", "tokens_per_s_est", "total_ms", "vram_used_mb"],
-    "tts": ["total_ms", "rtf", "ms_per_char", "roundtrip_cer", "vram_used_mb"],
-    "e2e": ["ttft_ms", "first_audio_ms", "total_ms", "vram_used_mb"],
+    "llm": ["ttft_ms", "tokens_per_s_est", "total_ms", "vram_delta_mb"],
+    "tts": ["total_ms", "rtf", "ms_per_char", "roundtrip_cer", "vram_delta_mb"],
+    "e2e": ["ttft_ms", "first_audio_ms", "total_ms", "vram_delta_mb"],
 }
 
 

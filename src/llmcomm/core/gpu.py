@@ -5,6 +5,18 @@ import asyncio
 import contextlib
 
 
+def read_used_mb(device_index: int = 0) -> float:
+    """One-shot whole-GPU used memory in MB (0 if NVML unavailable)."""
+    try:
+        import pynvml
+
+        pynvml.nvmlInit()
+        h = pynvml.nvmlDeviceGetHandleByIndex(device_index)
+        return pynvml.nvmlDeviceGetMemoryInfo(h).used / 1024 / 1024
+    except Exception:
+        return 0.0
+
+
 class VRAMMonitor:
     def __init__(self, device_index: int = 0, interval: float = 0.05):
         self.device_index = device_index
