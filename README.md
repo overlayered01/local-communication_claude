@@ -16,7 +16,7 @@ src/llmcomm/
   stt/              faster-whisper
   pipeline/         스트리밍 문장 분리 → TTS 큐 → 순서 보장 재생
   bench/            벤치마크 러너, 지표(CER 등), 마크다운 리포트
-  server/           FastAPI WebSocket 서버 + 웹 테스터
+  server/           FastAPI WebSocket 서버 + 웹 테스터 (옵션 로드/warmup 상태, 단계별 지연, 문장별 합성·재생 상태)
 reports/            results.jsonl (누적), summary.md, audio/<option>/*.wav
 ```
 
@@ -50,7 +50,7 @@ uv run llmcomm bench e2e ollama_qwen3_14b melotts_kr
 uv run llmcomm bench llm ollama_qwen3_8b --prompts korean_multiturn  # 문맥 유지 평가
 uv run llmcomm judge --judge ollama_qwen3_14b                    # LLM 답변 품질 채점 (1~5)
 uv run llmcomm report                                            # reports/summary.md 생성
-uv run llmcomm serve                                             # http://127.0.0.1:8080 웹 테스터
+uv run llmcomm serve                                             # http://127.0.0.1:8080 웹 테스터 (진행 단계·문장별 합성/재생 상태 표시)
 ```
 
 ## 측정 지표
