@@ -7,9 +7,11 @@ from collections import defaultdict
 from pathlib import Path
 
 KEY_METRICS = {
-    "llm": ["ttft_ms", "tokens_per_s_est", "total_ms", "vram_delta_mb"],
+    "llm": ["ttft_ms", "tokens_per_s_est", "total_ms", "vram_delta_mb", "n_sentences", "emoji_count", "style_violations"],
     "tts": ["total_ms", "rtf", "ms_per_char", "roundtrip_cer", "vram_delta_mb"],
-    "e2e": ["ttft_ms", "first_sentence_ms", "first_audio_ms", "llm_done_ms", "total_ms", "audio_sec", "vram_delta_mb"],
+    "e2e": ["ttft_ms", "first_sentence_ms", "first_audio_ms", "llm_done_ms", "total_ms", "audio_sec", "vram_delta_mb", "style_violations"],
+    "stt": ["latency_ms", "rtf", "cer", "vram_delta_mb"],
+    "rag": ["recall", "keyword_hit", "retrieval_ms", "context_chars", "ttft_ms", "total_ms", "e2e_ms", "style_violations"],
 }
 JUDGE_KEYS = ["naturalness", "korean", "relevance", "brevity"]
 
@@ -22,6 +24,8 @@ def _p95(xs: list[float]) -> float:
 def _cell(vals: list[float] | None, key: str) -> str:
     if not vals:
         return "-"
+    if key in ("recall", "keyword_hit", "cer"):
+        return f"{sum(vals) / len(vals):.2f}"
     med = st.median(vals)
     if key.endswith("_ms") and len(vals) > 1:
         return f"{med:.0f} ({_p95(vals):.0f})"

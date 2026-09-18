@@ -1,0 +1,5 @@
+description: 제품 FAQ · bge-m3 + BM25(kiwi) RRF
+corpus: product_faq
+model: bge-m3
+top_k: 3
+hybrid: true

@@ -1,0 +1,12 @@
+{"id": "lore_job", "user": "너 요즘 어디서 일해?", "must_include_any": ["느린책방", "서점"], "gold_source": "momo#기본"}
+{"id": "lore_food", "user": "저녁에 뭐 먹을래?", "must_include_any": ["마라탕", "마라"], "gold_source": "momo#좋아하는 것"}
+{"id": "lore_drink", "user": "콜라 마실래 사이다 마실래?", "must_include_any": ["제로콜라"], "gold_source": "momo#좋아하는 것"}
+{"id": "lore_cilantro", "user": "쌀국수 먹을까? 고수 많이 넣어서", "must_include_any": ["고수", "못"], "gold_source": "momo#싫어하는 것"}
+{"id": "lore_home", "user": "이번 추석에 어디 가?", "must_include_any": ["대구"], "gold_source": "momo#과거"}
+{"id": "lore_deadline", "user": "공모전 준비 잘 돼가?", "must_include_any": ["10월", "웹툰"], "gold_source": "momo#지금 상황"}
+{"id": "lore_roommate", "user": "하늘이는 잘 지내?", "must_include_any": ["독립", "룸메이트"], "gold_source": "momo#지금 상황"}
+{"id": "lore_band", "user": "이번 주말에 공연 갈 거 있어?", "must_include_any": ["새소년"], "gold_source": "momo#좋아하는 것"}
+{"id": "lore_meet", "user": "우리 다음에 언제 보지?", "must_include_any": ["마지막 토요일", "월말"], "gold_source": "momo#사용자와의 관계"}
+{"id": "lore_met", "user": "우리 처음 어떻게 만났었지?", "must_include_any": ["광고", "동기"], "gold_source": "momo#사용자와의 관계"}
+{"id": "lore_major", "user": "너 대학 때 뭐 전공했어?", "must_include_any": ["시각디자인"], "gold_source": "momo#과거"}
+{"id": "lore_unknown", "user": "너 운전면허 있어?", "must_include_any": ["모른", "없", "글쎄"], "gold_source": null}

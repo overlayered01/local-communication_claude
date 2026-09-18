@@ -1,0 +1,3 @@
+# Kaldi/Vosk small Korean model: CPU floor baseline
+type: vosk
+model: vosk-model-small-ko-0.22

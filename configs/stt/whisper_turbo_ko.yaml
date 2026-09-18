@@ -1,0 +1,7 @@
+# Korean fine-tune of large-v3-turbo (ghost613/whisper-large-v3-turbo-korean), converted with:
+#   llmcomm stt-convert ghost613/whisper-large-v3-turbo-korean
+type: faster_whisper
+model_size: whisper-large-v3-turbo-korean
+device: cuda
+compute_type: float16
+language: ko

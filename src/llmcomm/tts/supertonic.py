@@ -4,6 +4,7 @@ from pathlib import Path
 
 from llmcomm.core.interfaces import TTSEngine
 from llmcomm.core.types import AudioChunk
+from llmcomm.core.params import Param
 
 from ._util import run_blocking, to_mono_float32
 
@@ -17,6 +18,15 @@ class SupertonicTTS(TTSEngine):
     """
 
     sample_rate = 44100
+
+
+    PARAMS = [
+        Param("voice", "choice", "F1", choices=["F1", "F2", "F3", "F4", "F5", "M1", "M2", "M3", "M4", "M5"], description="화자"),
+        Param("total_steps", "int", 8, 2, 16, 1, description="디노이징 스텝. 줄이면 빨라지지만 4 이하는 발음 오류"),
+        Param("speed", "float", 1.05, 0.7, 1.5, 0.05, description="말 속도"),
+        Param("lang", "choice", "ko", choices=["ko", "en", "ja", "zh"], description="언어"),
+        Param("device", "choice", "cpu", choices=["cpu", "cuda"], description="실행 장치", reload=True),
+    ]
 
     def __init__(
         self,

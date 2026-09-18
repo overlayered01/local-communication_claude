@@ -1,0 +1,6 @@
+description: 페르소나 설정 · bge-m3
+corpus: persona_lore
+model: bge-m3
+top_k: 2
+context_header: 다음은 너(캐릭터) 자신에 대한 설정이다. 이 설정에 맞게 1인칭으로 자연스럽게 말하고, 설정에 없는 것은 지어내지 말고
+  모른다고 해.

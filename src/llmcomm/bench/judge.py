@@ -67,7 +67,9 @@ async def judge_llm_results(judge_option: str, results: Path | None = None, out:
         with out.open("a", encoding="utf-8") as f:
             for r in rows:
                 p = prompts.get(r["prompt_id"], {"user": "(unknown)"})
-                convo = f"### 사용자 발화\n{_user_text(p)}\n\n### AI 응답\n{r['metrics']['output_text']}"
+                sys_used = (r.get("meta") or {}).get("system")
+                convo = (f"### 시스템 프롬프트(AI에게 주어진 지시)\n{sys_used}\n\n" if sys_used else "") + \
+                        f"### 사용자 발화\n{_user_text(p)}\n\n### AI 응답\n{r['metrics']['output_text']}"
                 raw = await judge.complete([Message("system", RUBRIC), Message("user", convo)], max_tokens=200, temperature=0.0)
                 parsed = _parse(raw)
                 rec = {"judge": judge_option, "option": r["option"], "prompt_id": r["prompt_id"], "scores": parsed, "raw": raw if parsed is None else None}

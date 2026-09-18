@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from llmcomm.core.interfaces import TTSEngine
 from llmcomm.core.types import AudioChunk
+from llmcomm.core.params import Param
 
 from ._util import run_blocking, to_mono_float32
 
@@ -11,6 +12,14 @@ class MeloTTS(TTSEngine):
 
     Setup: pip install git+https://github.com/myshell-ai/MeloTTS.git ; python -m unidic download
     """
+
+
+    PARAMS = [
+        Param("speed", "float", 1.0, 0.6, 1.6, 0.05, description="말 속도"),
+        Param("speaker", "str", "KR", description="화자 id (hps.data.spk2id 키)"),
+        Param("device", "choice", "cuda", choices=["cpu", "cuda"], description="실행 장치", reload=True),
+        Param("language", "choice", "KR", choices=["KR", "EN", "JP", "ZH"], description="모델 언어", reload=True),
+    ]
 
     def __init__(self, language: str = "KR", speaker: str = "KR", device: str = "cuda", speed: float = 1.0):
         self.language, self.speaker, self.device, self.speed = language, speaker, device, speed

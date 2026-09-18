@@ -15,7 +15,25 @@
   button { cursor: pointer; } button:disabled { opacity: .5; cursor: default; }
   #msg { flex: 1; min-width: 200px; }
   .badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .8rem; color: #fff; background: var(--wait); }
-  .badge.loading, .badge.unloading { background: var(--run); } .badge.ready { background: var(--play); } .badge.error { background: var(--err); }
+  .badge.loading, .badge.unloading { background: var(--run); }
+  #mic.rec { background: var(--err); color: #fff; border-color: var(--err); }
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .9rem; margin-top: .5rem; }
+  .form .full { grid-column: 1 / -1; }
+  .form label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .15rem; }
+  .form input[type=text], .form input[type=number], .form select, .form textarea { width: 100%; font: inherit; font-size: .85rem; padding: .3rem .45rem; border: 1px solid var(--line); border-radius: 6px; }
+  .form textarea { min-height: 70px; resize: vertical; }
+  .form .inline { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; font-size: .85rem; }
+  .preview { font-size: .8rem; white-space: pre-wrap; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: .5rem; color: var(--muted); max-height: 180px; overflow: auto; }
+  .tools { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin-top: .4rem; }
+  .tools input { width: 160px; padding: .25rem .4rem; font-size: .85rem; }
+  .dirty-tag { color: var(--run); font-size: .85rem; }
+  @media (max-width: 640px) { .form { grid-template-columns: 1fr; } }
+  #sysbox { width: 100%; min-height: 110px; font: inherit; font-size: .85rem; padding: .4rem .5rem; border: 1px solid var(--line); border-radius: 6px; resize: vertical; }
+  #sysbox.dirty { border-color: var(--run); }
+  .style-chip { display: inline-block; padding: 0 .45rem; border-radius: 999px; font-size: .75rem; margin-right: .3rem; background: var(--card); border: 1px solid var(--line); }
+  .style-chip.bad { background: var(--err); color: #fff; border-color: var(--err); }
+  .hit { font-size: .82rem; padding: .3rem .4rem; border-bottom: 1px solid var(--line); }
+  .hit .src { color: var(--run); font-weight: 600; margin-right: .4rem; } .hit .sc { color: var(--muted); font-variant-numeric: tabular-nums; } .badge.ready { background: var(--play); } .badge.error { background: var(--err); }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .75rem; margin-bottom: .75rem; }
   .card h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--muted); font-weight: 600; }
   /* pipeline stepper */
@@ -37,6 +55,18 @@
   .st.synth { background: var(--run); } .st.queued { background: var(--wait); } .st.playing { background: var(--play); } .st.done { background: var(--done); }
   #metrics { font-size: .875rem; } #metrics td.num { text-align: right; }
   #error { color: var(--err); white-space: pre-wrap; display: none; margin-top: .5rem; }
+  /* parameter panel */
+  details.params { margin-bottom: .75rem; } details.params > summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .5rem .9rem; margin-top: .5rem; }
+  .pgroup { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .6rem .75rem; }
+  .pgroup h4 { margin: 0 0 .4rem; font-size: .85rem; color: var(--muted); display: flex; gap: .5rem; align-items: center; }
+  .prow { display: grid; grid-template-columns: 1fr auto; gap: .25rem .5rem; align-items: center; font-size: .82rem; padding: .15rem 0; }
+  .prow label { color: var(--fg); } .prow .desc { grid-column: 1 / -1; color: var(--muted); font-size: .72rem; margin-top: -.1rem; }
+  .prow input[type=range] { width: 130px; vertical-align: middle; } .prow input[type=text], .prow input[type=number] { width: 120px; padding: .15rem .3rem; font-size: .8rem; }
+  .prow select { padding: .15rem .3rem; font-size: .8rem; } .prow .val { font-variant-numeric: tabular-nums; min-width: 3.2em; display: inline-block; text-align: right; font-size: .8rem; }
+  .prow.changed label { color: var(--run); font-weight: 600; } .prow .rl { color: var(--err); font-size: .7rem; margin-left: .3rem; }
+  .pgroup .tools { margin-top: .4rem; display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+  .pgroup .tools input { width: 130px; padding: .15rem .3rem; font-size: .8rem; } .pgroup .tools button { padding: .15rem .5rem; font-size: .8rem; }
   @media (max-width: 640px) { .steps { grid-template-columns: repeat(3, 1fr); } }
 </style>
 <body>
@@ -45,14 +75,69 @@
 <div class="row">
   LLM <select id="llm"></select> <span class="badge" id="llm-state">미로드</span>
   TTS <select id="tts"></select> <span class="badge" id="tts-state">미로드</span>
+  STT <select id="stt"></select> <span class="badge" id="stt-state">미로드</span>
+  프롬프트 <select id="prompt"></select>
+  RAG <select id="rag"></select> <span class="badge" id="rag-state" style="display:none">미로드</span>
   <button id="warm" title="선택한 옵션을 미리 로드하고 warmup합니다">미리 로드</button>
 </div>
 <div class="row">
-  <input id="msg" placeholder="메시지 입력 후 Enter">
+  <input id="msg" placeholder="메시지 입력 후 Enter, 또는 🎤 버튼을 눌러 말하기">
   <button id="send">전송</button>
+  <button id="mic" title="누르면 녹음 시작, 다시 누르면 녹음을 끝내고 인식합니다">🎤 말하기</button>
   <button id="stop" disabled>재생 중단</button>
   <button id="reset">대화 초기화</button>
 </div>
+
+<details class="params" id="prompt-panel">
+  <summary>시스템 프롬프트 <span id="prompt-desc" style="color:var(--muted)"></span> <span id="prompt-dirty" class="dirty-tag"></span></summary>
+  <div class="form">
+    <div class="full"><label>설명</label><input type="text" id="pf-description"></div>
+    <div class="full"><label>페르소나 (누구인지, 어떻게 말하는지)</label><textarea id="pf-persona"></textarea></div>
+    <div><label>말투</label><select id="pf-register"><option value="banmal">반말</option><option value="jondae">존댓말</option><option value="free">자유</option></select></div>
+    <div><label>최대 문장 수 (0 = 제한 없음)</label><input type="number" id="pf-max" min="0" max="10"></div>
+    <div class="full inline">
+      <label><input type="checkbox" id="pf-noemoji"> 이모지 금지</label>
+      <label><input type="checkbox" id="pf-nomd"> 마크다운 금지</label>
+      <label><input type="checkbox" id="pf-ko"> 한국어로만</label>
+    </div>
+    <div class="full"><label>few-shot 예시 (한 줄에 하나, <code>사용자 발화 => 응답</code>)</label><textarea id="pf-fewshot" placeholder="야 오늘 완전 피곤하다 => 헐, 무슨 일 있었어? 일단 앉아서 좀 쉬어."></textarea></div>
+    <div class="full"><label>추가 규칙 (그대로 덧붙임)</label><textarea id="pf-extra" style="min-height:40px"></textarea></div>
+    <div class="full"><label>합성된 시스템 프롬프트 (실제 전송 내용)</label><div class="preview" id="pf-preview"></div></div>
+  </div>
+  <div class="tools">
+    <button id="pf-reset">프리셋 값으로</button>
+    <input id="pf-name" placeholder="새 프리셋 이름 (영문/숫자/_)">
+    <button id="pf-save">프리셋 저장</button>
+    <span style="color:var(--muted);font-size:.8rem">편집한 상태로 전송하면 저장 없이도 적용되며 결과에 <b>이름*</b>로 표시됩니다.</span>
+  </div>
+</details>
+
+<details class="params" id="rag-panel" style="display:none">
+  <summary>RAG 설정 <span id="rag-desc" style="color:var(--muted)"></span> <span id="rag-dirty" class="dirty-tag"></span></summary>
+  <div class="form">
+    <div class="full"><label>설명</label><input type="text" id="rf-description"></div>
+    <div><label>코퍼스 (data/rag/ 폴더)</label><select id="rf-corpus"></select></div>
+    <div><label>임베더</label><select id="rf-embedder"><option value="ollama">Ollama 임베딩 (dense)</option><option value="none">없음 (BM25만)</option></select></div>
+    <div><label>임베딩 모델 (Ollama에 받은 것)</label><select id="rf-model"></select></div>
+    <div><label>top_k</label><input type="number" id="rf-topk" min="1" max="10"></div>
+    <div><label>청크 크기 (글자)</label><input type="number" id="rf-chunk" min="100" max="2000" step="50"></div>
+    <div><label>청크 겹침 (문장 수)</label><input type="number" id="rf-overlap" min="0" max="5"></div>
+    <div><label>최소 유사도 (dense만)</label><input type="number" id="rf-minscore" min="0" max="1" step="0.05"></div>
+    <div class="inline"><label><input type="checkbox" id="rf-hybrid"> 하이브리드 (BM25 + dense, RRF)</label></div>
+    <div class="full"><label>컨텍스트 머리말 (검색 결과 앞에 붙는 지시문)</label><textarea id="rf-header" style="min-height:50px"></textarea></div>
+  </div>
+  <div class="tools">
+    <button id="rf-reset">프리셋 값으로</button>
+    <input id="rf-name" placeholder="새 프리셋 이름 (영문/숫자/_)">
+    <button id="rf-save">프리셋 저장</button>
+    <span style="color:var(--muted);font-size:.8rem">청크 크기·임베딩 모델을 바꾸면 다음 요청에서 다시 인덱싱됩니다.</span>
+  </div>
+</details>
+
+<details class="params" id="params-panel">
+  <summary>세부 옵션 <span id="params-summary" style="color:var(--run)"></span></summary>
+  <div class="pgrid" id="pgrid"></div>
+</details>
 
 <div class="card">
   <div class="row" style="margin-bottom:.35rem"><h3 style="margin:0">진행 단계</h3><span id="elapsed"></span></div>
@@ -70,6 +155,8 @@
 
 <div class="card"><h3>대화</h3><div id="log"></div></div>
 
+<div class="card" id="rag-card" style="display:none"><h3>검색된 근거 <span id="rag-timing" style="font-weight:400"></span></h3><div id="hits"></div></div>
+
 <div class="card"><h3>문장별 파이프라인 (클라이언트 기준 경과 시각, ms)</h3>
   <table><thead><tr><th>#</th><th>문장</th><th>상태</th><th>문장 감지</th><th>음성 도착</th><th>재생 시작</th><th>길이</th></tr></thead>
   <tbody id="sent"></tbody></table>
@@ -79,17 +166,177 @@
 
 <script>
 const $ = s => document.querySelector(s);
-const SYSTEM = "당신은 친근한 한국어 대화 상대입니다. 짧고 자연스럽게 답하세요.";
-let ws, history = [{ role: "system", content: SYSTEM }];
+let ws, history = [];  // system prompt is supplied server-side from the prompt option
 let ctx, playAt = 0, sources = [], turn = null, t0 = 0, timer = null, meta = null;
 let rows = [], lastAudioEnd = 0, llmDone = false, ttftMarked = false, started = false;
 
 fetch("/options").then(r => r.json()).then(o => {
-  for (const k of ["llm", "tts"]) $("#" + k).innerHTML = o[k].map(x => `<option>${x}</option>`).join("");
-  const prefer = { llm: "ollama_qwen3_8b", tts: "supertonic_gpu" };
+  for (const k of ["llm", "tts", "stt", "prompt", "rag"]) $("#" + k).innerHTML = o[k].map(x => `<option>${x}</option>`).join("");
+  const prefer = { llm: "ollama_qwen3_8b", tts: "supertonic_gpu", stt: "sensevoice_small", prompt: "voice_banmal" };
   for (const k in prefer) if (o[k].includes(prefer[k])) $("#" + k).value = prefer[k];
   return fetch("/loaded").then(r => r.json());
-}).then(l => { for (const k in l) if ($("#" + k).value === l[k]) setState(k, "ready"); });
+}).then(l => { for (const k in l) if ($("#" + k).value === l[k]) setState(k, "ready"); })
+  .then(() => Promise.all(["llm", "tts", "stt", "pipeline"].map(loadSchema)))
+  .then(loadPrompt);
+$("#prompt").onchange = loadPrompt;
+$("#rag").onchange = () => { const on = $("#rag").value !== "none"; $("#rag-state").style.display = on ? "" : "none"; if (on) setState("rag", "wait"); $("#rag-card").style.display = on ? "" : "none"; loadRag(); };
+
+
+// ---- tunable parameters: schema-driven form per engine, overrides = values that differ from the preset ----
+// ---- prompt editor: fields mirror configs/prompt/*.yaml; overrides are sent as prompt_config when edited ----
+let promptInfo = null;
+const REG_KO = { banmal: "반말", jondae: "존댓말", free: "자유" };
+function composeSystem(c) {  // mirrors core/prompts.py compose_system() for the live preview
+  const st = c.style, b = st.register === "banmal", r = [];
+  if (st.register === "banmal") r.push("항상 친한 친구에게 말하듯 반말로만 말해. 존댓말('~요', '~습니다')은 쓰지 마.");
+  else if (st.register === "jondae") r.push("항상 정중한 존댓말('~요', '~습니다')로만 말하세요. 반말은 쓰지 마세요.");
+  if (st.max_sentences) r.push(b ? `답은 ${st.max_sentences}문장 이내로 짧게 해.` : `답은 ${st.max_sentences}문장 이내로 짧게 하세요.`);
+  if (st.no_emoji) r.push(b ? "이모지와 이모티콘은 절대 쓰지 마." : "이모지와 이모티콘은 절대 쓰지 마세요.");
+  if (st.no_markdown) r.push(b ? "마크다운, 목록, 굵은 글씨는 쓰지 말고 말로만 답해." : "마크다운, 목록, 굵은 글씨, 제목 표시는 쓰지 말고 말로만 답하세요.");
+  if (st.language === "ko") r.push(b ? "한국어로만 답해. 영어나 한자를 섞지 마." : "한국어로만 답하세요. 영어나 한자를 섞지 마세요.");
+  const parts = [c.persona.trim()]; if (r.length) parts.push(r.map(x => "- " + x).join("\n")); if ((c.extra || "").trim()) parts.push(c.extra.trim());
+  return parts.join("\n\n");
+}
+function promptFormRead() {
+  const few = $("#pf-fewshot").value.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const [u, a] = l.split("=>"); return { user: (u || "").trim(), assistant: (a || "").trim() }; }).filter(x => x.user && x.assistant);
+  return { description: $("#pf-description").value, persona: $("#pf-persona").value,
+    style: { register: $("#pf-register").value, max_sentences: parseInt($("#pf-max").value || "0"), no_emoji: $("#pf-noemoji").checked, no_markdown: $("#pf-nomd").checked, language: $("#pf-ko").checked ? "ko" : "any" },
+    few_shot: few, extra: $("#pf-extra").value };
+}
+function promptFormWrite(c) {
+  $("#pf-description").value = c.description || ""; $("#pf-persona").value = c.persona || "";
+  $("#pf-register").value = c.style.register; $("#pf-max").value = c.style.max_sentences; $("#pf-noemoji").checked = !!c.style.no_emoji;
+  $("#pf-nomd").checked = !!c.style.no_markdown; $("#pf-ko").checked = c.style.language === "ko";
+  $("#pf-fewshot").value = (c.few_shot || []).map(x => `${x.user} => ${x.assistant}`).join("\n"); $("#pf-extra").value = c.extra || "";
+  promptFormChanged();
+}
+function promptOverride() {  // dict when edited, undefined when identical to the preset
+  if (!promptInfo) return undefined;
+  const cur = promptFormRead(), base = { description: promptInfo.description, persona: promptInfo.persona, style: promptInfo.style, few_shot: promptInfo.few_shot, extra: promptInfo.extra };
+  return JSON.stringify(cur) === JSON.stringify({ ...base, style: { ...base.style }, few_shot: base.few_shot || [], extra: base.extra || "", description: base.description || "" }) ? undefined : cur;
+}
+function promptFormChanged() {
+  const c = promptFormRead(); $("#pf-preview").textContent = composeSystem(c);
+  const d = promptOverride() !== undefined; $("#prompt-dirty").textContent = d ? "(편집됨 — 전송 시 이름*로 적용)" : "";
+  const st = c.style; $("#prompt-desc").textContent = `— ${REG_KO[st.register]}${st.max_sentences ? `, ${st.max_sentences}문장` : ""}${st.no_emoji ? ", 이모지 금지" : ""}`;
+}
+async function loadPrompt() {
+  promptInfo = await fetch(`/prompt/${$("#prompt").value}`).then(r => r.json());
+  promptFormWrite(promptInfo);
+}
+["pf-description", "pf-persona", "pf-register", "pf-max", "pf-noemoji", "pf-nomd", "pf-ko", "pf-fewshot", "pf-extra"].forEach(id => { $("#" + id).oninput = promptFormChanged; $("#" + id).onchange = promptFormChanged; });
+$("#pf-reset").onclick = () => promptInfo && promptFormWrite(promptInfo);
+$("#pf-save").onclick = async () => {
+  const name = $("#pf-name").value.trim(); if (!name) { alert("프리셋 이름을 입력하세요"); return; }
+  const r = await fetch("/prompt/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, config: promptFormRead() }) }).then(r => r.json());
+  if (r.detail) { alert("저장 실패: " + JSON.stringify(r.detail)); return; }
+  $("#prompt").innerHTML = r.options.map(x => `<option>${x}</option>`).join(""); $("#prompt").value = name; $("#pf-name").value = ""; await loadPrompt();
+};
+
+// ---- RAG editor ----
+let ragInfo = null, ragMeta = { corpora: [], embedding_models: [] };
+const RAG_KEYS = ["description", "corpus", "embedder", "model", "top_k", "chunk_chars", "overlap_sentences", "min_score", "hybrid", "context_header"];
+function ragFormRead() {
+  return { description: $("#rf-description").value, corpus: $("#rf-corpus").value, embedder: $("#rf-embedder").value, model: $("#rf-model").value,
+    top_k: parseInt($("#rf-topk").value || "3"), chunk_chars: parseInt($("#rf-chunk").value || "400"), overlap_sentences: parseInt($("#rf-overlap").value || "1"),
+    min_score: parseFloat($("#rf-minscore").value || "0"), hybrid: $("#rf-hybrid").checked, context_header: $("#rf-header").value };
+}
+function ragFormWrite(c) {
+  $("#rf-description").value = c.description || ""; $("#rf-corpus").value = c.corpus; $("#rf-embedder").value = c.embedder;
+  if (![...$("#rf-model").options].some(o => o.value === c.model)) $("#rf-model").insertAdjacentHTML("beforeend", `<option>${c.model}</option>`);
+  $("#rf-model").value = c.model; $("#rf-topk").value = c.top_k; $("#rf-chunk").value = c.chunk_chars; $("#rf-overlap").value = c.overlap_sentences;
+  $("#rf-minscore").value = c.min_score; $("#rf-hybrid").checked = !!c.hybrid; $("#rf-header").value = c.context_header || ""; ragFormChanged();
+}
+function ragOverride() {
+  if (!ragInfo || $("#rag").value === "none") return undefined;
+  const cur = ragFormRead(), same = RAG_KEYS.every(k => String(cur[k]) === String(ragInfo[k]));
+  return same ? undefined : cur;
+}
+function ragFormChanged() {
+  const d = ragOverride() !== undefined; $("#rag-dirty").textContent = d ? "(편집됨 — 전송 시 이름*로 적용)" : "";
+  $("#rf-model").disabled = $("#rf-embedder").value === "none"; $("#rf-minscore").disabled = $("#rf-embedder").value === "none" || $("#rf-hybrid").checked;
+  if (ragInfo) $("#rag-desc").textContent = `— ${$("#rf-corpus").value} · ${$("#rf-embedder").value === "none" ? "BM25" : $("#rf-model").value}${$("#rf-hybrid").checked ? "+BM25" : ""} · k=${$("#rf-topk").value}`;
+}
+async function loadRag() {
+  const name = $("#rag").value;
+  $("#rag-panel").style.display = name === "none" ? "none" : ""; if (name === "none") { ragInfo = null; return; }
+  if (!ragMeta.corpora.length) { ragMeta = await fetch("/rag-meta").then(r => r.json());
+    $("#rf-corpus").innerHTML = ragMeta.corpora.map(x => `<option>${x}</option>`).join(""); $("#rf-model").innerHTML = ragMeta.embedding_models.map(x => `<option>${x.replace(/:latest$/, "")}</option>`).join(""); }
+  ragInfo = await fetch(`/rag/${name}`).then(r => r.json()); ragFormWrite(ragInfo);
+}
+["rf-description", "rf-corpus", "rf-embedder", "rf-model", "rf-topk", "rf-chunk", "rf-overlap", "rf-minscore", "rf-hybrid", "rf-header"].forEach(id => { $("#" + id).oninput = ragFormChanged; $("#" + id).onchange = ragFormChanged; });
+$("#rf-reset").onclick = () => ragInfo && ragFormWrite(ragInfo);
+$("#rf-save").onclick = async () => {
+  const name = $("#rf-name").value.trim(); if (!name) { alert("프리셋 이름을 입력하세요"); return; }
+  const r = await fetch("/rag/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, config: ragFormRead() }) }).then(r => r.json());
+  if (r.detail) { alert("저장 실패: " + JSON.stringify(r.detail)); return; }
+  $("#rag").innerHTML = r.options.map(x => `<option>${x}</option>`).join(""); $("#rag").value = name; $("#rf-name").value = ""; await loadRag(); $("#rag").onchange();
+};
+const schemas = { llm: null, tts: null, stt: null, pipeline: null };
+const values = { llm: {}, tts: {}, stt: {}, pipeline: {} };
+const KIND_LABEL = { llm: "LLM", tts: "TTS", stt: "STT", pipeline: "파이프라인" };
+
+async function loadSchema(kind) {
+  const opt = kind === "pipeline" ? "pipeline" : $("#" + kind).value;
+  const d = await fetch(`/schema/${kind}/${opt}`).then(r => r.json());
+  schemas[kind] = d; values[kind] = {};
+  renderParams();
+}
+function overridesOf(kind) {
+  const out = {}; const sc = schemas[kind]; if (!sc) return out;
+  for (const p of sc.params) { const v = values[kind][p.name]; if (v !== undefined && String(v) !== String(p.preset)) out[p.name] = v; }
+  return out;
+}
+function allOverrides() { return { llm: overridesOf("llm"), tts: overridesOf("tts"), stt: overridesOf("stt"), pipeline: overridesOf("pipeline") }; }
+function fmtVal(p, v) { return p.type === "float" ? Number(v).toFixed(p.step && p.step < 0.1 ? 2 : (p.step && p.step < 1 ? 2 : 1)).replace(/\.?0+$/, "") : String(v); }
+function renderParams() {
+  const grid = $("#pgrid"); grid.innerHTML = "";
+  let changed = 0, reloadNeeded = [];
+  for (const kind of ["llm", "tts", "stt", "pipeline"]) {
+    const sc = schemas[kind]; if (!sc) continue;
+    const g = document.createElement("div"); g.className = "pgroup";
+    g.innerHTML = `<h4>${KIND_LABEL[kind]} <span style="font-weight:400">${sc.option}</span></h4>`;
+    for (const p of sc.params) {
+      const cur = values[kind][p.name] !== undefined ? values[kind][p.name] : p.preset;
+      const isChanged = String(cur) !== String(p.preset); if (isChanged) { changed++; if (p.reload) reloadNeeded.push(`${KIND_LABEL[kind]}:${p.name}`); }
+      const row = document.createElement("div"); row.className = "prow" + (isChanged ? " changed" : "");
+      const lab = document.createElement("label"); lab.textContent = p.name; if (p.reload) lab.insertAdjacentHTML("beforeend", `<span class="rl" title="바꾸면 모델을 다시 로드합니다">재로드</span>`);
+      const ctl = document.createElement("span");
+      const set = v => { values[kind][p.name] = v; renderParams(); };
+      if (p.type === "bool") {
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = String(cur) === "true"; cb.onchange = () => set(cb.checked); ctl.appendChild(cb);
+      } else if (p.type === "choice") {
+        const sel = document.createElement("select"); sel.innerHTML = p.choices.map(c => `<option${c === String(cur) ? " selected" : ""}>${c}</option>`).join(""); sel.onchange = () => set(sel.value); ctl.appendChild(sel);
+      } else if ((p.type === "float" || p.type === "int") && p.min !== null && p.max !== null && (p.max - p.min) / (p.step || 1) <= 4000) {
+        const r = document.createElement("input"); r.type = "range"; r.min = p.min; r.max = p.max; r.step = p.step || (p.type === "int" ? 1 : 0.01); r.value = cur;
+        const v = document.createElement("span"); v.className = "val"; v.textContent = fmtVal(p, cur);
+        r.oninput = () => { v.textContent = fmtVal(p, r.value); }; r.onchange = () => set(p.type === "int" ? parseInt(r.value) : parseFloat(r.value));
+        ctl.appendChild(r); ctl.appendChild(v);
+      } else {
+        const t = document.createElement("input"); t.type = p.type === "int" ? "number" : "text"; t.value = cur ?? ""; t.onchange = () => set(p.type === "int" ? parseInt(t.value) : t.value); ctl.appendChild(t);
+      }
+      row.appendChild(lab); row.appendChild(ctl);
+      if (p.description) row.insertAdjacentHTML("beforeend", `<div class="desc">${p.description}</div>`);
+      g.appendChild(row);
+    }
+    if (kind !== "pipeline") {
+      const tools = document.createElement("div"); tools.className = "tools";
+      tools.innerHTML = `<button data-k="${kind}" class="preset-reset">프리셋으로</button> <input placeholder="새 프리셋 이름" data-k="${kind}" class="preset-name"> <button data-k="${kind}" class="preset-save">프리셋 저장</button>`;
+      g.appendChild(tools);
+    }
+    grid.appendChild(g);
+  }
+  $("#params-summary").textContent = changed ? `(${changed}개 변경${reloadNeeded.length ? ", 재로드: " + reloadNeeded.join(", ") : ""})` : "";
+  grid.querySelectorAll(".preset-reset").forEach(b => b.onclick = () => { values[b.dataset.k] = {}; renderParams(); });
+  grid.querySelectorAll(".preset-save").forEach(b => b.onclick = async () => {
+    const kind = b.dataset.k, name = grid.querySelector(`.preset-name[data-k="${kind}"]`).value.trim();
+    if (!name) { alert("프리셋 이름을 입력하세요"); return; }
+    const r = await fetch("/preset", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, base: $("#" + kind).value, name, overrides: overridesOf(kind) }) }).then(r => r.json());
+    $("#" + kind).innerHTML = r.options.map(x => `<option>${x}</option>`).join(""); $("#" + kind).value = name;
+    values[kind] = {}; await loadSchema(kind); setState(kind, "wait");
+  });
+}
 
 function now() { return Math.round(performance.now() - t0); }
 function setState(kind, stage, detail) {
@@ -120,7 +367,7 @@ function row(i) {
 }
 function setRow(i, cls, label) { const s = row(i).tr.children[2].firstChild; s.className = "st " + cls; s.textContent = label; }
 function fmt(v) { return typeof v === "number" ? Math.round(v) : String(v); }
-function finish() { $("#stop").disabled = true; clearInterval(timer); timer = null; }
+function finish() { $("#stop").disabled = true; $("#mic").disabled = false; clearInterval(timer); timer = null; }
 
 function tick() {
   $("#elapsed").textContent = started ? "경과 " + now() + " ms" : "옵션 로드 중… " + now() + " ms";
@@ -142,8 +389,16 @@ function connect() {
   ws.onmessage = e => {
     if (typeof e.data === "string") {
       const m = JSON.parse(e.data);
-      if (m.type === "start") {
+      if (m.type === "retrieval") {
+        $("#rag-card").style.display = "";
+        $("#rag-timing").textContent = `(${m.option}, 검색 ${m.retrieval_ms} ms${m.embed_ms ? `, 임베딩 ${m.embed_ms} ms` : ""}, 컨텍스트 ${m.context_chars}자)`;
+        $("#hits").innerHTML = m.hits.map(h => `<div class="hit"><span class="src">${h.source}</span><span class="sc">${h.score}</span><div>${h.text}</div></div>`).join("") || "<div class='hit'>검색 결과 없음</div>";
+      } else if (m.type === "transcript") {
+        if (youTurn) youTurn.querySelector(".text").textContent = `${m.text}  (🎤 ${m.seconds}s, ${$("#stt").value} ${m.ms} ms)`;
+        if (m.text.trim()) history.push({ role: "user", content: m.text });
+      } else if (m.type === "start") {
         t0 = performance.now(); started = true; step("sent", 0, true);
+        if (turn && m.llm) turn.querySelector(".who").textContent = `${m.llm} + ${m.tts} · ${m.prompt}${m.rag ? " · rag:" + m.rag : ""} · 프롬프트 ${m.prompt_chars}자`;
       } else if (m.type === "status") {
         setState(m.kind, m.stage, m.stage === "ready" ? (m.ms ? `(${m.ms} ms)` : "") : m.option);
       } else if (m.type === "text") {
@@ -156,16 +411,24 @@ function connect() {
       } else if (m.type === "audio_meta") {
         meta = m;
       } else if (m.type === "metrics") {
-        if (m.warmup_only) { $("#send").disabled = false; return; }
+        if (m.warmup_only) { $("#send").disabled = false; $("#mic").disabled = false; finish(); return; }
         step("llm_done", fmt(m.llm_done_ms), rows.length > 0); llmDone = true;
-        $("#metrics tbody").innerHTML = Object.entries(m).filter(([k]) => k !== "type")
-          .map(([k, v]) => `<tr><td>${k}</td><td class="num">${fmt(v)}</td></tr>`).join("");
+        if (m.style && turn) {
+          const s = m.style, chips = [`${s.n_sentences}문장`, `${s.chars}자`, `존댓말 ${s.polite_sentences}/반말 ${s.casual_sentences}`];
+          if (s.emoji_count) chips.push(`이모지 ${s.emoji_count}`); if (s.markdown_count) chips.push(`마크다운 ${s.markdown_count}`);
+          if (s.hanja_chars) chips.push(`한자 ${s.hanja_chars}`); if (s.latin_words > 2) chips.push(`영어 ${s.latin_words}`);
+          turn.insertAdjacentHTML("beforeend", `<div style="margin-top:.2rem">${chips.map(c => `<span class="style-chip">${c}</span>`).join("")}<span class="style-chip ${s.style_violations ? "bad" : ""}">규칙 위반 ${s.style_violations}</span></div>`);
+        }
+        $("#metrics tbody").innerHTML = Object.entries(m).filter(([k]) => k !== "type" && k !== "effective" && k !== "style")
+          .map(([k, v]) => `<tr><td>${k}</td><td class="num">${fmt(v)}</td></tr>`).join("")
+          + (m.effective ? Object.entries(m.effective).map(([k, v]) => `<tr><td>${k} 적용값</td><td class="num" style="text-align:left;white-space:normal;font-size:.75rem;color:var(--muted)">${Object.entries(v).map(([a, b]) => `${a}=${b}`).join(", ")}</td></tr>`).join("") : "");
         turn.classList.add("final"); history.push({ role: "assistant", content: turn.querySelector(".text").textContent });
         $("#send").disabled = false;
         if (!rows.length) { step("play_done", now(), false); finish(); }
       } else if (m.type === "error") {
         $("#error").textContent = m.message; $("#error").style.display = "block";
         $("#send").disabled = false; finish(); if (turn) turn.classList.add("final");
+        if (youTurn && youTurn.querySelector(".text").textContent.startsWith("🎤 인식 중")) youTurn.querySelector(".text").textContent = "🎤 (인식 실패)";
       }
       return;
     }
@@ -193,33 +456,78 @@ function send(payload) {
   ws.readyState === 1 ? go() : (ws.onopen = go);
 }
 
-$("#send").onclick = () => {
-  const c = $("#msg").value.trim(); if (!c) return;
+let youTurn = null;
+function beginTurn(userText) {
   if (!ctx) ctx = new AudioContext(); if (ctx.state === "suspended") ctx.resume();
   resetSteps(); t0 = performance.now(); started = false;
-  history.push({ role: "user", content: c });
+  if (userText != null) history.push({ role: "user", content: userText });
   const log = $("#log");
   log.insertAdjacentHTML("beforeend", `<div class="turn you"><span class="who">나</span><span class="text"></span></div>`);
-  log.lastElementChild.querySelector(".text").textContent = c;
+  youTurn = log.lastElementChild; youTurn.querySelector(".text").textContent = userText != null ? userText : "🎤 인식 중…";
   log.insertAdjacentHTML("beforeend", `<div class="turn bot"><span class="who"></span><span class="text"></span></div>`);
   turn = log.lastElementChild; turn.querySelector(".who").textContent = `${$("#llm").value} + ${$("#tts").value}`;
   log.scrollTop = log.scrollHeight;
-  $("#msg").value = ""; $("#send").disabled = true;
+  $("#msg").value = ""; $("#send").disabled = true; $("#mic").disabled = true;
   if (timer) clearInterval(timer); timer = setInterval(tick, 100);
-  send({ llm: $("#llm").value, tts: $("#tts").value, messages: history });
+}
+$("#send").onclick = () => {
+  const c = $("#msg").value.trim(); if (!c) return;
+  beginTurn(c);
+  send({ llm: $("#llm").value, tts: $("#tts").value, stt: $("#stt").value, messages: history, params: allOverrides(),
+         prompt: $("#prompt").value, prompt_config: promptOverride(), rag: $("#rag").value, rag_config: ragOverride() });
 };
+
+// ---- microphone: capture PCM in the browser, downsample to 16 kHz, send one PCM16 frame ----
+let micStream = null, micNode = null, micCtx = null, micChunks = [], micStart = 0;
+function downsample(f32, from, to) {
+  if (from === to) return f32;
+  const ratio = from / to, n = Math.floor(f32.length / ratio), out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = Math.floor(i * ratio), b = Math.min(f32.length, Math.floor((i + 1) * ratio));
+    let sum = 0; for (let j = a; j < b; j++) sum += f32[j]; out[i] = sum / Math.max(1, b - a);
+  }
+  return out;
+}
+async function micStartRec() {
+  try { micStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }); }
+  catch (e) { $("#error").textContent = "마이크 접근 실패: " + e.message; $("#error").style.display = "block"; return; }
+  micCtx = new AudioContext(); const src = micCtx.createMediaStreamSource(micStream);
+  micNode = micCtx.createScriptProcessor(4096, 1, 1); micChunks = []; micStart = performance.now();
+  micNode.onaudioprocess = e => micChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  src.connect(micNode); micNode.connect(micCtx.destination);
+  $("#mic").classList.add("rec"); $("#mic").textContent = "■ 녹음 중… (다시 눌러 끝내기)";
+}
+function micStopRec() {
+  micNode.disconnect(); micStream.getTracks().forEach(t => t.stop());
+  const total = micChunks.reduce((n, c) => n + c.length, 0), all = new Float32Array(total);
+  let off = 0; for (const c of micChunks) { all.set(c, off); off += c.length; }
+  const pcm = downsample(all, micCtx.sampleRate, 16000); micCtx.close();
+  const i16 = new Int16Array(pcm.length);
+  for (let i = 0; i < pcm.length; i++) i16[i] = Math.max(-32768, Math.min(32767, Math.round(pcm[i] * 32767)));
+  $("#mic").classList.remove("rec"); $("#mic").textContent = "🎤 말하기";
+  if (pcm.length < 16000 * 0.3) { $("#error").textContent = "녹음이 너무 짧습니다."; $("#error").style.display = "block"; return; }
+  beginTurn(null);
+  if (!ws || ws.readyState > 1) connect();
+  const go = () => {
+    ws.send(JSON.stringify({ type: "audio_in", llm: $("#llm").value, tts: $("#tts").value, stt: $("#stt").value, sample_rate: 16000, messages: history, params: allOverrides(),
+                             prompt: $("#prompt").value, prompt_config: promptOverride(), rag: $("#rag").value, rag_config: ragOverride() }));
+    ws.send(i16.buffer);
+  };
+  ws.readyState === 1 ? go() : (ws.onopen = go);
+}
+$("#mic").onclick = () => { $("#mic").classList.contains("rec") ? micStopRec() : micStartRec(); };
 $("#msg").onkeydown = e => { if (e.key === "Enter") $("#send").click(); };
-$("#warm").onclick = () => { $("#send").disabled = true; send({ llm: $("#llm").value, tts: $("#tts").value, messages: [], warmup_only: true }); };
+$("#warm").onclick = () => { $("#send").disabled = true; send({ llm: $("#llm").value, tts: $("#tts").value, stt: $("#stt").value, messages: [], warmup_only: true, params: allOverrides() }); };
 $("#stop").onclick = () => {
   sources.forEach(s => { try { s.stop(); } catch (_) {} }); sources = []; playAt = 0;
   rows.forEach((r, i) => { if (r.start != null && ctx.currentTime < r.end) { setRow(i, "done", "중단"); r.end = ctx.currentTime; } });
   lastAudioEnd = ctx ? ctx.currentTime : 0; $("#stop").disabled = true;
 };
 $("#reset").onclick = () => {
-  history = [{ role: "system", content: SYSTEM }]; $("#log").innerHTML = ""; resetSteps();
+  history = []; $("#log").innerHTML = ""; resetSteps();
   $("#metrics tbody").innerHTML = ""; $("#elapsed").textContent = "";
 };
-for (const k of ["llm", "tts"]) $("#" + k).onchange = () => setState(k, "wait");
+for (const k of ["llm", "tts", "stt"]) $("#" + k).onchange = () => { setState(k, "wait"); loadSchema(k); };
 document.addEventListener("click", () => { if (ctx && ctx.state === "suspended") ctx.resume(); });
 </script>
 </body>

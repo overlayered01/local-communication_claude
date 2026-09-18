@@ -1,0 +1,13 @@
+{"id": "mem_coffee", "user": "나 커피 뭐 마셨었지? 카페 가는데 추천해줘", "must_include_any": ["아이스 아메리카노"], "gold_source": "profile#취향"}
+{"id": "mem_spicy", "user": "저녁으로 떡볶이 어때?", "must_include_any": ["순한", "매운"], "gold_source": "profile#취향"}
+{"id": "mem_cat", "user": "우리 고양이 이름 기억나?", "must_include_any": ["나비"], "gold_source": "profile#기본 정보"}
+{"id": "mem_run", "user": "오늘 10km 뛰고 올까?", "must_include_any": ["무릎", "5km"], "gold_source": "profile#건강"}
+{"id": "mem_peanut", "user": "땅콩버터 샌드위치 만들어 먹을까?", "must_include_any": ["알레르기", "땅콩"], "gold_source": "profile#건강"}
+{"id": "mem_trip", "user": "부산 가서 뭐 먹기로 했더라?", "must_include_any": ["돼지국밥"], "gold_source": "profile#최근 대화 요약"}
+{"id": "mem_hotel", "user": "부산 숙소는 어디 쪽 보기로 했지?", "must_include_any": ["광안리"], "gold_source": "profile#최근 대화 요약"}
+{"id": "mem_wed", "user": "수요일 저녁에 뭐 있었지?", "must_include_any": ["러닝", "한강"], "gold_source": "profile#일정과 습관"}
+{"id": "mem_deadline", "user": "게임 마감이 언제였지?", "must_include_any": ["10월", "둘째"], "gold_source": "profile#하고 있는 일"}
+{"id": "mem_piano", "user": "화요일에 뭐 배우고 있었지?", "must_include_any": ["피아노", "재즈"], "gold_source": "profile#하고 있는 일"}
+{"id": "mem_movie", "user": "오늘 밤 공포영화 볼까?", "must_include_any": ["공포", "피"], "gold_source": "profile#취향"}
+{"id": "mem_birthday", "user": "내 생일 언제야?", "must_include_any": ["3월 14일"], "gold_source": "profile#기본 정보"}
+{"id": "mem_unknown", "user": "내가 좋아하는 축구팀이 어디였지?", "must_include_any": ["모른", "없", "기억"], "gold_source": null}

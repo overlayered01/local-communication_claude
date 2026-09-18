@@ -1,0 +1,4 @@
+description: 제품 FAQ · bge-m3 top_k=1 (컨텍스트 최소)
+corpus: product_faq
+model: bge-m3
+top_k: 1

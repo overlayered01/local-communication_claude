@@ -90,3 +90,25 @@ class VRAMMonitor:
     @property
     def delta_mb(self) -> float:
         return max(0.0, self.peak_mb - self.baseline_mb)
+
+
+def register_onnxruntime_dll() -> None:
+    """Load the pip onnxruntime DLL before any extension that links `onnxruntime.dll` by name.
+
+    Windows 11 ships an old onnxruntime.dll (1.17) in System32 for Windows ML. sherpa-onnx's extension
+    module has no bundled copy, so without this it binds to the System32 DLL and crashes with
+    "The requested API version [28] is not available".
+    """
+    import ctypes
+    import os
+    from pathlib import Path
+
+    try:
+        import onnxruntime
+    except ImportError:
+        return
+    capi = Path(onnxruntime.__file__).parent / "capi"
+    dll = capi / "onnxruntime.dll"
+    if dll.exists():
+        os.add_dll_directory(str(capi))
+        ctypes.WinDLL(str(dll))

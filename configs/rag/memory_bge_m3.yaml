@@ -1,0 +1,5 @@
+description: 사용자 기억 · bge-m3
+corpus: user_memory
+model: bge-m3
+top_k: 2
+context_header: 다음은 이 사용자에 대해 기억하고 있는 내용입니다. 자연스럽게 반영해서 대화하고, 기억에 없는 것은 아는 척하지 마세요.

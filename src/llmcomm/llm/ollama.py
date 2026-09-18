@@ -7,10 +7,26 @@ import httpx
 
 from llmcomm.core.interfaces import LLMBackend
 from llmcomm.core.types import Message
+from llmcomm.core.params import Param
 
 
 class OllamaBackend(LLMBackend):
     """Ollama native /api/chat streaming."""
+
+
+    PARAMS = [
+        Param("temperature", "float", 0.7, 0.0, 2.0, 0.05, description="샘플링 온도. 낮으면 일관적, 높으면 다양"),
+        Param("top_p", "float", 0.9, 0.0, 1.0, 0.05, description="누적 확률 컷오프"),
+        Param("top_k", "int", 40, 0, 200, 1, description="상위 k 토큰만 샘플링"),
+        Param("repeat_penalty", "float", 1.1, 0.8, 2.0, 0.05, description="반복 억제"),
+        Param("num_ctx", "int", 8192, 1024, 32768, 1024, description="컨텍스트 길이(토큰). 크면 VRAM 증가"),
+        Param("num_predict", "int", 200, 16, 2048, 16, description="최대 생성 토큰"),
+        Param("seed", "int", 0, 0, 2**31 - 1, 1, description="0이면 무작위"),
+        Param("think", "bool", False, description="사고(reasoning) 모드. 음성 대화에서는 꺼야 지연이 공정", reload=False),
+        Param("keep_alive", "str", "10m", description="응답 후 모델을 GPU에 유지하는 시간"),
+        Param("model", "str", "", description="Ollama 모델 태그", reload=True),
+        Param("host", "str", "http://localhost:11434", description="Ollama 서버", reload=True),
+    ]
 
     def __init__(self, model: str, host: str = "http://localhost:11434", options: dict | None = None, keep_alive: str = "10m", think: bool | None = None):
         self.think = think
@@ -66,3 +82,23 @@ class OllamaBackend(LLMBackend):
     async def close(self) -> None:
         await self.unload()
         await self._client.aclose()
+
+    _OPTION_KEYS = {"temperature", "top_p", "top_k", "repeat_penalty", "num_ctx", "num_predict", "seed"}
+
+    def set_param(self, name: str, value):
+        """Sampling knobs live in the Ollama `options` dict; the rest are plain attributes."""
+        if name in self._OPTION_KEYS:
+            if name == "seed" and not value:
+                self.options.pop("seed", None)
+            else:
+                self.options[name] = value
+        else:
+            setattr(self, name, value)
+
+    def get_param(self, name: str):
+        if name in self._OPTION_KEYS:
+            default = next(p.default for p in self.PARAMS if p.name == name)
+            return self.options.get(name, default)
+        return getattr(self, name, None)
+
+

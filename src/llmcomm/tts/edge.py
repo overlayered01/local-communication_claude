@@ -2,12 +2,19 @@ from __future__ import annotations
 
 from llmcomm.core.interfaces import TTSEngine
 from llmcomm.core.types import AudioChunk
+from llmcomm.core.params import Param
 
 from ._util import decode_audio_bytes
 
 
 class EdgeTTS(TTSEngine):
     """Microsoft Edge neural voices (cloud). NOT local: used only as a quality/latency reference point."""
+
+
+    PARAMS = [
+        Param("voice", "choice", "ko-KR-SunHiNeural", choices=["ko-KR-SunHiNeural", "ko-KR-InJoonNeural", "ko-KR-HyunsuMultilingualNeural"], description="Edge 음성"),
+        Param("rate", "str", "+0%", description="속도 (예: +10%, -5%)"),
+    ]
 
     def __init__(self, voice: str = "ko-KR-SunHiNeural", rate: str = "+0%"):
         self.voice, self.rate = voice, rate

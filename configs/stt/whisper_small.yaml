@@ -1,0 +1,5 @@
+type: faster_whisper
+model_size: small
+device: cuda
+compute_type: float16
+language: ko

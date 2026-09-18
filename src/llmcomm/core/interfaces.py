@@ -50,10 +50,14 @@ class TTSEngine(ABC):
 
 class STTEngine(ABC):
     name: str = "stt"
+    streaming: bool = False  # True if the engine can decode incrementally (partial results while the user speaks)
 
     @abstractmethod
     async def transcribe(self, samples: np.ndarray, sample_rate: int) -> str:
         ...
+
+    async def warmup(self) -> None:
+        await self.transcribe(np.zeros(16000, dtype=np.float32), 16000)
 
     async def close(self) -> None:
         pass

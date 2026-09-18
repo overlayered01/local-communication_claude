@@ -1,0 +1,4 @@
+description: 제품 FAQ · bge-m3 dense
+corpus: product_faq
+model: bge-m3
+top_k: 3

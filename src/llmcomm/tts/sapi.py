@@ -8,12 +8,19 @@ import soundfile as sf
 
 from llmcomm.core.interfaces import TTSEngine
 from llmcomm.core.types import AudioChunk
+from llmcomm.core.params import Param
 
 from ._util import run_blocking, to_mono_float32
 
 
 class WindowsSAPITTS(TTSEngine):
     """Windows built-in voices via PowerShell System.Speech. Zero install; quality floor baseline."""
+
+
+    PARAMS = [
+        Param("voice", "str", "", description="SAPI 음성 이름(부분 일치). 비우면 기본"),
+        Param("rate", "int", 0, -10, 10, 1, description="SAPI 속도 -10..10"),
+    ]
 
     def __init__(self, voice: str | None = None, rate: int = 0):
         self.voice, self.rate = voice, rate

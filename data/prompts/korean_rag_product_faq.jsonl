@@ -1,0 +1,15 @@
+{"id": "faq_power", "user": "루미 전원 어댑터는 몇 와트야?", "must_include_any": ["20"], "gold_source": "lumi_faq#전원과 초기 설정"}
+{"id": "faq_wifi", "user": "루미가 5기가 와이파이도 되나?", "must_include_any": ["2.4", "지원하지 않"], "gold_source": "lumi_faq#전원과 초기 설정"}
+{"id": "faq_purple", "user": "루미 링이 보라색인데 무슨 뜻이야?", "must_include_any": ["마이크"], "gold_source": "lumi_faq#링 색상의 의미"}
+{"id": "faq_red", "user": "링이 빨간색으로 바뀌었어. 왜 그래?", "must_include_any": ["네트워크", "인터넷"], "gold_source": "lumi_faq#링 색상의 의미"}
+{"id": "faq_wake", "user": "호출어를 다른 걸로 바꿀 수 있어?", "must_include_any": ["안녕 루미", "헤이 루미"], "gold_source": "lumi_faq#호출어 변경"}
+{"id": "faq_bt", "user": "블루투스 페어링은 어떻게 해?", "must_include_any": ["블루투스 켜"], "gold_source": "lumi_faq#블루투스 연결"}
+{"id": "faq_alarm_max", "user": "알람은 몇 개까지 만들 수 있어?", "must_include_any": ["10"], "gold_source": "lumi_faq#알람과 타이머"}
+{"id": "faq_night", "user": "밤에 볼륨이 6 이상 안 올라가는데?", "must_include_any": ["야간 모드"], "gold_source": "lumi_faq#볼륨"}
+{"id": "faq_reset", "user": "루미 공장 초기화 방법 알려줘", "must_include_any": ["10초", "핀"], "gold_source": "lumi_faq#초기화"}
+{"id": "faq_warranty", "user": "보증 기간이 얼마야? 물에 빠뜨렸는데 되나?", "must_include_any": ["1년", "제외"], "gold_source": "lumi_faq#보증과 수리"}
+{"id": "faq_music", "user": "유튜브 뮤직 연결돼?", "must_include_any": ["유튜브 뮤직", "지원"], "gold_source": "lumi_faq#지원 음악 서비스"}
+{"id": "faq_group", "user": "루미 몇 대까지 같이 묶을 수 있어?", "must_include_any": ["6"], "gold_source": "lumi_faq#여러 대 연결"}
+{"id": "faq_offline", "user": "인터넷 끊기면 뭐가 되고 뭐가 안 돼?", "must_include_any": ["알람", "블루투스"], "gold_source": "lumi_faq#오프라인 동작"}
+{"id": "faq_phone", "user": "고객센터 전화번호 뭐야?", "must_include_any": ["1588-0000"], "gold_source": "lumi_faq#보증과 수리"}
+{"id": "faq_unknown", "user": "루미로 전등 색깔 바꿀 수 있어?", "must_include_any": ["모른", "없", "자료"], "gold_source": null}

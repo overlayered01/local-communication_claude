@@ -31,9 +31,14 @@ supertonic = [
     "nvidia-cublas", "nvidia-cuda-runtime", "nvidia-cufft", "nvidia-curand", "nvidia-cuda-nvrtc", "nvidia-cudnn-cu13",
 ]
 melotts = ["melotts", "kiwipiepy>=0.20"]  # git source below (PyPI sdist is broken); kiwipiepy backs shims/eunjeon
+# torch must be a DIRECT dependency for [tool.uv.sources] to apply; as a transitive dep of melotts it resolves to the
+# PyPI CPU wheel and silently breaks every GPU path (faster-whisper cuBLAS, MeloTTS CUDA)
+gpu = ["torch>=2.11", "torchaudio>=2.11"]
 edge = ["edge-tts>=6.1"]
 # STT
 whisper = ["faster-whisper>=1.0"]
+# CPU/ONNX STT engines (no GPU contention with the LLM): sherpa-onnx runs SenseVoice + Korean zipformer, vosk is the floor baseline
+stt = ["faster-whisper>=1.0", "sherpa-onnx>=1.12", "vosk>=0.3.45"]
 # quality scoring
 judge = ["jiwer>=3.0"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]

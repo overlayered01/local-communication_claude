@@ -1,0 +1,5 @@
+type: faster_whisper
+model_size: large-v3-turbo
+device: cuda
+compute_type: int8_float16
+language: ko

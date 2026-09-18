@@ -1,0 +1,8 @@
+# FunAudioLLM SenseVoice-Small (zh/en/ja/ko/yue) via sherpa-onnx, CPU int8.
+# The 2025-09-09 release produces garbage with sherpa-onnx 1.13.8; 2024-07-17 is correct.
+type: sherpa_onnx
+family: sense_voice
+model: sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17
+int8: true
+num_threads: 4
+language: ko

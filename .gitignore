@@ -5,3 +5,4 @@ reports/*.jsonl
 reports/audio/
 models/
 .env
+data/stt/audio/

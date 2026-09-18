@@ -1,0 +1,7 @@
+# CPU path: no GPU contention with the LLM. int8 keeps it usable.
+type: faster_whisper
+model_size: small
+device: cpu
+compute_type: int8
+language: ko
+cpu_threads: 8

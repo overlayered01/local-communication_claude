@@ -1,0 +1,4 @@
+description: 제품 FAQ · nomic-embed-text (영어 중심, 한국어 약함 대조군)
+corpus: product_faq
+model: nomic-embed-text
+top_k: 3

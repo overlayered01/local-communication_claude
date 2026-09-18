@@ -1,0 +1,6 @@
+# Korean streaming zipformer (k2-fsa): true incremental decoding, CPU
+type: sherpa_onnx
+family: zipformer_streaming
+model: sherpa-onnx-streaming-zipformer-korean-2024-06-16
+int8: true
+num_threads: 4

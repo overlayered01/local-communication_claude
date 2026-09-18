@@ -1,0 +1,6 @@
+# Korean zipformer transducer (k2-fsa), offline, CPU
+type: sherpa_onnx
+family: zipformer
+model: sherpa-onnx-zipformer-korean-2024-06-24
+int8: true
+num_threads: 4

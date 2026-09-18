@@ -1,0 +1,4 @@
+description: 제품 FAQ · BM25만 (임베딩 없음, CPU)
+corpus: product_faq
+embedder: none
+top_k: 3

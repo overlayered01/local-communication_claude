@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from llmcomm.core.interfaces import TTSEngine
 from llmcomm.core.types import AudioChunk
+from llmcomm.core.params import Param
 
 from ._util import run_blocking, to_mono_float32
 
@@ -11,6 +12,13 @@ class CosyVoiceTTS(TTSEngine):
 
     Setup: git clone --recursive https://github.com/FunAudioLLM/CosyVoice ; download CosyVoice2-0.5B.
     """
+
+
+    PARAMS = [
+        Param("prompt_wav", "str", "", description="클로닝 참조 음성", reload=True),
+        Param("prompt_text", "str", "", description="참조 음성의 전사", reload=True),
+        Param("fp16", "bool", True, description="반정밀도", reload=True),
+    ]
 
     def __init__(self, repo_dir: str, model_dir: str, prompt_wav: str, prompt_text: str, fp16: bool = True):
         self.repo_dir = repo_dir

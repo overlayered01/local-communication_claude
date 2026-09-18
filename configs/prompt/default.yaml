@@ -1,0 +1,10 @@
+# 1차 벤치에서 쓴 한 줄 프롬프트. 비교 기준선. 스타일 규칙 없음.
+description: 1차 벤치 기준선 (규칙 없음)
+persona: |
+  당신은 친근한 한국어 대화 상대입니다. 짧고 자연스럽게 답하세요.
+style:
+  register: free
+  max_sentences: 0
+  no_emoji: false
+  no_markdown: false
+  language: any
