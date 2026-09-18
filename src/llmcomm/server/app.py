@@ -26,18 +26,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import time
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from fastapi import Body, FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
 from llmcomm.core.params import PIPELINE_PARAMS, apply_params, coerce_overrides, effective_params, option_label, split_overrides
 from llmcomm.core.prompts import DEFAULT_PROMPT, build_messages, describe_prompt, list_prompts, load_prompt, prompt_from_dict, save_prompt, style_metrics
-from llmcomm.core.rag import Retriever, describe_rag, list_corpora, list_embedding_models, list_rag, load_rag, rag_from_dict, save_rag
+from llmcomm.core.rag import RAG_DATA, Retriever, chunk_corpus, describe_rag, list_corpora, list_embedding_models, list_rag, load_rag, rag_from_dict, save_rag
 from llmcomm.core.registry import build, describe, list_configs, save_preset, schema
 from llmcomm.core.types import Message
 from llmcomm.pipeline.streaming import converse
@@ -114,6 +115,86 @@ def rag_endpoint(name: str):
 async def rag_meta():
     """Choices for the RAG editor: corpora on disk and embedding models pulled in Ollama."""
     return {"corpora": list_corpora(), "embedding_models": await list_embedding_models()}
+
+
+# ---------------------------------------------------------------- RAG corpus management (upload documents from the page)
+
+def _corpus_dir(name: str, create: bool = False) -> Path:
+    if not re.fullmatch(r"[A-Za-z0-9_\-]+", name):
+        raise HTTPException(400, "corpus name: letters, digits, _ and - only")
+    d = RAG_DATA / name
+    if create:
+        d.mkdir(parents=True, exist_ok=True)
+    elif not d.exists():
+        raise HTTPException(404, f"corpus {name} not found")
+    return d
+
+
+def _invalidate_corpus(name: str) -> None:
+    """Drop cached retrievers over this corpus so the next request re-chunks and re-embeds."""
+    for k in [k for k, r in _retrievers.items() if r.cfg.corpus == name]:
+        _retrievers.pop(k, None)
+
+
+def _to_text(filename: str, data: bytes) -> tuple[str, str]:
+    """Return (stored filename, text). PDF -> .md via pypdf; .md/.txt kept; other types rejected."""
+    ext = Path(filename).suffix.lower()
+    stem = re.sub(r"[^A-Za-z0-9가-힣_\-]+", "_", Path(filename).stem).strip("_") or "doc"
+    if ext == ".pdf":
+        from io import BytesIO
+
+        from pypdf import PdfReader
+
+        pages = [pg.extract_text() or "" for pg in PdfReader(BytesIO(data)).pages]
+        text = f"# {stem}\n\n" + "\n\n".join(f"## {stem} p.{i + 1}\n{t.strip()}" for i, t in enumerate(pages) if t.strip())
+        return f"{stem}.md", text
+    if ext in (".md", ".txt", ".markdown"):
+        text = data.decode("utf-8-sig", errors="replace")
+        if "## " not in text:  # no sections: make the file one section so chunk sources stay readable
+            text = f"## {stem}\n{text}"
+        return f"{stem}{'.txt' if ext == '.txt' else '.md'}", text
+    raise HTTPException(400, f"unsupported file type {ext}; use .md, .txt or .pdf")
+
+
+@app.get("/corpus/{name}")
+def corpus_files(name: str):
+    d = _corpus_dir(name)
+    files = sorted(list(d.glob("*.md")) + list(d.glob("*.txt")))
+    chunks = chunk_corpus(d, 400, 1)
+    per_file = {}
+    for c in chunks:
+        per_file[c.source.split("#")[0]] = per_file.get(c.source.split("#")[0], 0) + 1
+    return {"corpus": name, "files": [{"name": f.name, "bytes": f.stat().st_size, "chunks": per_file.get(f.name, 0)} for f in files],
+            "chunks": len(chunks)}
+
+
+@app.post("/corpus/{name}")
+def corpus_create(name: str):
+    _corpus_dir(name, create=True)
+    return {"corpora": list_corpora()}
+
+
+@app.post("/corpus/{name}/upload")
+async def corpus_upload(name: str, files: list[UploadFile] = File(...)):
+    d = _corpus_dir(name, create=True)
+    saved = []
+    for f in files:
+        fname, text = _to_text(f.filename or "doc.md", await f.read())
+        (d / fname).write_text(text, encoding="utf-8")
+        saved.append(fname)
+    _invalidate_corpus(name)
+    return {"saved": saved, **corpus_files(name), "corpora": list_corpora()}
+
+
+@app.delete("/corpus/{name}/file/{filename}")
+def corpus_delete_file(name: str, filename: str):
+    d = _corpus_dir(name)
+    target = d / Path(filename).name
+    if not target.exists() or target.suffix.lower() not in (".md", ".txt"):
+        raise HTTPException(404, "file not found")
+    target.unlink()
+    _invalidate_corpus(name)
+    return corpus_files(name)
 
 
 @app.post("/prompt/save")

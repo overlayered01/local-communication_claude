@@ -4,50 +4,91 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>llmcomm option tester</title>
 <style>
-  :root { --fg:#1b1b1b; --muted:#6b7280; --line:#d9dde3; --bg:#fff; --card:#f7f8fa;
-          --wait:#9ca3af; --run:#2563eb; --play:#16a34a; --done:#4b5563; --err:#dc2626; }
+  :root { --fg:#1b1b1b; --muted:#6b7280; --line:#d9dde3; --bg:#f3f4f6; --card:#fff; --side:#fff;
+          --wait:#9ca3af; --run:#2563eb; --play:#16a34a; --done:#4b5563; --err:#dc2626;
+          --c-llm:#2563eb; --c-tts:#d97706; --c-stt:#0891b2; --c-prompt:#7c3aed; --c-rag:#059669; --c-pipe:#6b7280; }
   * { box-sizing: border-box; }
+  html, body { margin: 0; }
   body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; color: var(--fg); background: var(--bg);
-         max-width: 960px; margin: 1.5rem auto; padding: 0 16px; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.5; }
-  h2 { margin: 0 0 .75rem; }
-  .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .5rem; }
-  select, input, button { font: inherit; font-size: 1rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-  button { cursor: pointer; } button:disabled { opacity: .5; cursor: default; }
-  #msg { flex: 1; min-width: 200px; }
-  .badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .8rem; color: #fff; background: var(--wait); }
-  .badge.loading, .badge.unloading { background: var(--run); }
-  #mic.rec { background: var(--err); color: #fff; border-color: var(--err); }
-  .form { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .9rem; margin-top: .5rem; }
+         word-break: keep-all; overflow-wrap: anywhere; line-height: 1.5; }
+  header.top { display: flex; align-items: baseline; gap: 1rem; padding: .8rem 1.25rem; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  header.top h1 { font-size: 1.15rem; margin: 0; } header.top .desc { color: var(--muted); font-size: .85rem; }
+  header.top .legend { margin-left: auto; display: flex; gap: .6rem; font-size: .75rem; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: .7em; height: .7em; border-radius: 2px; margin-right: .25em; vertical-align: -1px; }
+  .layout { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 1rem; padding: 1rem 1.25rem 2rem; max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; padding: .75rem 16px; } header.top { padding: .6rem 16px; } }
+
+  /* ---- settings sidebar: one section per area ---- */
+  aside.side { display: flex; flex-direction: column; gap: .6rem; align-self: start; position: sticky; top: 3.6rem; max-height: calc(100vh - 4.2rem); overflow-y: auto; padding-right: .2rem; }
+  @media (max-width: 980px) { aside.side { position: static; max-height: none; } }
+  details.area { background: var(--side); border: 1px solid var(--line); border-left: 5px solid var(--ac); border-radius: 8px; }
+  details.area > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .5rem; padding: .55rem .75rem; font-weight: 700; font-size: .9rem; }
+  details.area > summary::-webkit-details-marker { display: none; }
+  details.area > summary::before { content: "▸"; color: var(--ac); font-size: .8rem; transition: transform .15s; }
+  details.area[open] > summary::before { transform: rotate(90deg); }
+  details.area > summary .tag { font-size: .7rem; color: #fff; background: var(--ac); border-radius: 4px; padding: 0 .4rem; font-weight: 600; letter-spacing: .02em; }
+  details.area > summary .cur { margin-left: auto; font-weight: 400; color: var(--muted); font-size: .8rem; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  details.area .body { padding: .2rem .75rem .75rem; border-top: 1px solid var(--line); }
+  .area.llm { --ac: var(--c-llm); } .area.tts { --ac: var(--c-tts); } .area.stt { --ac: var(--c-stt); }
+  .area.prompt { --ac: var(--c-prompt); } .area.rag { --ac: var(--c-rag); } .area.pipe { --ac: var(--c-pipe); }
+  .pick { display: flex; gap: .5rem; align-items: center; margin: .5rem 0 .4rem; }
+  .pick select { flex: 1; min-width: 0; }
+  .sub { font-size: .8rem; color: var(--muted); margin: .2rem 0 .3rem; }
+  select, input, button, textarea { font: inherit; font-size: .9rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--fg); }
+  button { cursor: pointer; } button:hover { background: #f3f4f6; } button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--run); color: #fff; border-color: var(--run); } button.primary:hover { background: #1d4ed8; }
+  .badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .75rem; color: #fff; background: var(--wait); white-space: nowrap; }
+  .badge.loading, .badge.unloading { background: var(--run); } .badge.ready { background: var(--play); } .badge.error { background: var(--err); }
+  #warm { width: 100%; margin-top: .2rem; }
+
+  /* parameter groups rendered by JS into #pgrid-<kind> */
+  .pgroup h4 { display: none; }  /* area header already says which engine */
+  .prow { display: grid; grid-template-columns: 1fr auto; gap: .25rem .5rem; align-items: center; font-size: .82rem; padding: .18rem 0; border-bottom: 1px dashed #eef0f3; }
+  .prow:last-of-type { border-bottom: none; }
+  .prow label { color: var(--fg); } .prow .desc { grid-column: 1 / -1; color: var(--muted); font-size: .72rem; margin-top: -.15rem; }
+  .prow input[type=range] { width: 120px; vertical-align: middle; } .prow input[type=text], .prow input[type=number] { width: 120px; padding: .15rem .3rem; font-size: .8rem; }
+  .prow select { padding: .15rem .3rem; font-size: .8rem; } .prow .val { font-variant-numeric: tabular-nums; min-width: 3.2em; display: inline-block; text-align: right; font-size: .8rem; }
+  .prow.changed label { color: var(--run); font-weight: 600; } .prow .rl { color: var(--err); font-size: .7rem; margin-left: .3rem; }
+  .pgroup .tools, .tools { margin-top: .5rem; display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+  .tools input { width: 150px; padding: .25rem .4rem; font-size: .82rem; } .tools button { padding: .2rem .55rem; font-size: .82rem; }
+  #params-summary { font-size: .78rem; color: var(--run); }
+
+  /* forms (prompt / rag editors) */
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem .7rem; margin-top: .4rem; }
   .form .full { grid-column: 1 / -1; }
-  .form label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .15rem; }
-  .form input[type=text], .form input[type=number], .form select, .form textarea { width: 100%; font: inherit; font-size: .85rem; padding: .3rem .45rem; border: 1px solid var(--line); border-radius: 6px; }
-  .form textarea { min-height: 70px; resize: vertical; }
-  .form .inline { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; font-size: .85rem; }
-  .preview { font-size: .8rem; white-space: pre-wrap; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: .5rem; color: var(--muted); max-height: 180px; overflow: auto; }
-  .tools { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin-top: .4rem; }
-  .tools input { width: 160px; padding: .25rem .4rem; font-size: .85rem; }
-  .dirty-tag { color: var(--run); font-size: .85rem; }
-  @media (max-width: 640px) { .form { grid-template-columns: 1fr; } }
-  #sysbox { width: 100%; min-height: 110px; font: inherit; font-size: .85rem; padding: .4rem .5rem; border: 1px solid var(--line); border-radius: 6px; resize: vertical; }
-  #sysbox.dirty { border-color: var(--run); }
-  .style-chip { display: inline-block; padding: 0 .45rem; border-radius: 999px; font-size: .75rem; margin-right: .3rem; background: var(--card); border: 1px solid var(--line); }
-  .style-chip.bad { background: var(--err); color: #fff; border-color: var(--err); }
-  .hit { font-size: .82rem; padding: .3rem .4rem; border-bottom: 1px solid var(--line); }
-  .hit .src { color: var(--run); font-weight: 600; margin-right: .4rem; } .hit .sc { color: var(--muted); font-variant-numeric: tabular-nums; } .badge.ready { background: var(--play); } .badge.error { background: var(--err); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .75rem; margin-bottom: .75rem; }
-  .card h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--muted); font-weight: 600; }
-  /* pipeline stepper */
+  .form label { display: block; font-size: .75rem; color: var(--muted); margin-bottom: .12rem; }
+  .form input[type=text], .form input[type=number], .form select, .form textarea { width: 100%; font-size: .84rem; padding: .3rem .45rem; }
+  .form textarea { min-height: 64px; resize: vertical; }
+  .form .inline { display: flex; gap: .8rem; flex-wrap: wrap; align-items: center; font-size: .84rem; }
+  .form .inline label { display: inline; color: var(--fg); font-size: .84rem; }
+  .preview { font-size: .78rem; white-space: pre-wrap; background: #f8fafc; border: 1px solid var(--line); border-radius: 6px; padding: .5rem; color: var(--muted); max-height: 160px; overflow: auto; }
+  .dirty-tag { color: var(--run); font-size: .8rem; }
+  .files { font-size: .8rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .files .f { display: flex; gap: .6rem; align-items: center; padding: .25rem .5rem; border-bottom: 1px solid var(--line); }
+  .files .f:last-child { border-bottom: none; } .files .f .n { flex: 1; } .files .f .m { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .files .f button { padding: 0 .4rem; font-size: .75rem; } .files .empty { padding: .4rem .5rem; color: var(--muted); }
+  .drop { border: 2px dashed var(--line); border-radius: 8px; padding: .55rem; text-align: center; color: var(--muted); font-size: .8rem; margin-top: .4rem; }
+  .drop.over { border-color: var(--run); color: var(--run); }
+  #mic.rec { background: var(--err); color: #fff; border-color: var(--err); }
+
+  /* ---- main column ---- */
+  main.main { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .75rem .9rem; }
+  .card h3 { margin: 0 0 .5rem; font-size: .85rem; color: var(--muted); font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+  .card h3 .hint { text-transform: none; font-weight: 400; letter-spacing: 0; }
+  .composer { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  .composer #msg { flex: 1; min-width: 240px; padding: .55rem .7rem; font-size: 1rem; }
   .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
   .step { border-top: 4px solid var(--wait); padding-top: .35rem; font-size: .85rem; }
   .step .n { color: var(--muted); font-size: .75rem; } .step .t { font-variant-numeric: tabular-nums; font-weight: 600; }
-  .step.active { border-color: var(--run); } .step.active .t { color: var(--run); }
-  .step.done { border-color: var(--play); }
+  .step.active { border-color: var(--run); } .step.active .t { color: var(--run); } .step.done { border-color: var(--play); }
   #elapsed { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .85rem; margin-left: auto; }
-  /* log */
-  #log { max-height: 320px; overflow-y: auto; padding: .25rem; }
-  .turn { margin: .35rem 0; } .turn .who { color: var(--muted); font-size: .8rem; margin-right: .4rem; }
+  .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  #log { max-height: 360px; overflow-y: auto; padding: .25rem; }
+  .turn { margin: .45rem 0; padding: .45rem .6rem; border-radius: 8px; }
+  .turn.you { background: #eef2ff; } .turn.bot { background: #f8fafc; border: 1px solid var(--line); }
+  .turn .who { display: block; color: var(--muted); font-size: .75rem; margin-bottom: .15rem; }
   .turn.bot .text::after { content: "▍"; color: var(--run); } .turn.bot.final .text::after { content: ""; }
-  /* sentence table */
   table { width: 100%; border-collapse: collapse; font-size: .875rem; }
   th, td { text-align: left; padding: .3rem .4rem; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { color: var(--muted); font-weight: 600; } td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -55,42 +96,52 @@
   .st.synth { background: var(--run); } .st.queued { background: var(--wait); } .st.playing { background: var(--play); } .st.done { background: var(--done); }
   #metrics { font-size: .875rem; } #metrics td.num { text-align: right; }
   #error { color: var(--err); white-space: pre-wrap; display: none; margin-top: .5rem; }
-  /* parameter panel */
-  details.params { margin-bottom: .75rem; } details.params > summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
-  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .5rem .9rem; margin-top: .5rem; }
-  .pgroup { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .6rem .75rem; }
-  .pgroup h4 { margin: 0 0 .4rem; font-size: .85rem; color: var(--muted); display: flex; gap: .5rem; align-items: center; }
-  .prow { display: grid; grid-template-columns: 1fr auto; gap: .25rem .5rem; align-items: center; font-size: .82rem; padding: .15rem 0; }
-  .prow label { color: var(--fg); } .prow .desc { grid-column: 1 / -1; color: var(--muted); font-size: .72rem; margin-top: -.1rem; }
-  .prow input[type=range] { width: 130px; vertical-align: middle; } .prow input[type=text], .prow input[type=number] { width: 120px; padding: .15rem .3rem; font-size: .8rem; }
-  .prow select { padding: .15rem .3rem; font-size: .8rem; } .prow .val { font-variant-numeric: tabular-nums; min-width: 3.2em; display: inline-block; text-align: right; font-size: .8rem; }
-  .prow.changed label { color: var(--run); font-weight: 600; } .prow .rl { color: var(--err); font-size: .7rem; margin-left: .3rem; }
-  .pgroup .tools { margin-top: .4rem; display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
-  .pgroup .tools input { width: 130px; padding: .15rem .3rem; font-size: .8rem; } .pgroup .tools button { padding: .15rem .5rem; font-size: .8rem; }
-  @media (max-width: 640px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .style-chip { display: inline-block; padding: 0 .45rem; border-radius: 999px; font-size: .75rem; margin-right: .3rem; background: #fff; border: 1px solid var(--line); }
+  .style-chip.bad { background: var(--err); color: #fff; border-color: var(--err); }
+  .hit { font-size: .82rem; padding: .3rem .4rem; border-bottom: 1px solid var(--line); }
+  .hit .src { color: var(--c-rag); font-weight: 600; margin-right: .4rem; } .hit .sc { color: var(--muted); font-variant-numeric: tabular-nums; }
+  @media (max-width: 640px) { .steps { grid-template-columns: repeat(3, 1fr); } .form { grid-template-columns: 1fr; } }
 </style>
 <body>
-<h2>llmcomm option tester</h2>
+<header class="top">
+  <h1>llmcomm option tester</h1>
+  <span class="desc">왼쪽에서 영역별 옵션을 고르고 조정 → 오른쪽에서 대화하며 지연·규칙·근거를 확인</span>
+  <span class="legend"><span><i style="background:var(--c-llm)"></i>LLM</span><span><i style="background:var(--c-tts)"></i>TTS</span><span><i style="background:var(--c-stt)"></i>STT</span><span><i style="background:var(--c-prompt)"></i>프롬프트</span><span><i style="background:var(--c-rag)"></i>RAG</span><span><i style="background:var(--c-pipe)"></i>파이프라인</span></span>
+</header>
 
-<div class="row">
-  LLM <select id="llm"></select> <span class="badge" id="llm-state">미로드</span>
-  TTS <select id="tts"></select> <span class="badge" id="tts-state">미로드</span>
-  STT <select id="stt"></select> <span class="badge" id="stt-state">미로드</span>
-  프롬프트 <select id="prompt"></select>
-  RAG <select id="rag"></select> <span class="badge" id="rag-state" style="display:none">미로드</span>
-  <button id="warm" title="선택한 옵션을 미리 로드하고 warmup합니다">미리 로드</button>
-</div>
-<div class="row">
-  <input id="msg" placeholder="메시지 입력 후 Enter, 또는 🎤 버튼을 눌러 말하기">
-  <button id="send">전송</button>
-  <button id="mic" title="누르면 녹음 시작, 다시 누르면 녹음을 끝내고 인식합니다">🎤 말하기</button>
-  <button id="stop" disabled>재생 중단</button>
-  <button id="reset">대화 초기화</button>
-</div>
+<div class="layout">
+<aside class="side">
 
-<details class="params" id="prompt-panel">
-  <summary>시스템 프롬프트 <span id="prompt-desc" style="color:var(--muted)"></span> <span id="prompt-dirty" class="dirty-tag"></span></summary>
-  <div class="form">
+  <details class="area llm" open>
+    <summary><span class="tag">LLM</span> 언어 모델 <span class="cur" id="cur-llm"></span></summary>
+    <div class="body">
+      <div class="pick"><select id="llm"></select><span class="badge" id="llm-state">미로드</span></div>
+      <div id="pgrid-llm"></div>
+    </div>
+  </details>
+
+  <details class="area tts">
+    <summary><span class="tag">TTS</span> 음성 합성 <span class="cur" id="cur-tts"></span></summary>
+    <div class="body">
+      <div class="pick"><select id="tts"></select><span class="badge" id="tts-state">미로드</span></div>
+      <div id="pgrid-tts"></div>
+    </div>
+  </details>
+
+  <details class="area stt">
+    <summary><span class="tag">STT</span> 음성 인식 <span class="cur" id="cur-stt"></span></summary>
+    <div class="body">
+      <div class="pick"><select id="stt"></select><span class="badge" id="stt-state">미로드</span></div>
+      <div id="pgrid-stt"></div>
+    </div>
+  </details>
+
+  <details class="area prompt">
+    <summary><span class="tag">PROMPT</span> 시스템 프롬프트 <span class="cur" id="cur-prompt"></span></summary>
+    <div class="body">
+      <div class="pick"><select id="prompt"></select></div>
+<div class="sub"><span id="prompt-desc"></span> <span id="prompt-dirty" class="dirty-tag"></span></div>
+<div class="form">
     <div class="full"><label>설명</label><input type="text" id="pf-description"></div>
     <div class="full"><label>페르소나 (누구인지, 어떻게 말하는지)</label><textarea id="pf-persona"></textarea></div>
     <div><label>말투</label><select id="pf-register"><option value="banmal">반말</option><option value="jondae">존댓말</option><option value="free">자유</option></select></div>
@@ -110,11 +161,16 @@
     <button id="pf-save">프리셋 저장</button>
     <span style="color:var(--muted);font-size:.8rem">편집한 상태로 전송하면 저장 없이도 적용되며 결과에 <b>이름*</b>로 표시됩니다.</span>
   </div>
-</details>
+    </div>
+  </details>
 
-<details class="params" id="rag-panel" style="display:none">
-  <summary>RAG 설정 <span id="rag-desc" style="color:var(--muted)"></span> <span id="rag-dirty" class="dirty-tag"></span></summary>
-  <div class="form">
+  <details class="area rag">
+    <summary><span class="tag">RAG</span> 검색 근거 <span class="cur" id="cur-rag"></span></summary>
+    <div class="body">
+      <div class="pick"><select id="rag"></select><span class="badge" id="rag-state" style="display:none">미로드</span></div>
+      <div id="rag-panel" style="display:none">
+<div class="sub"><span id="rag-desc"></span> <span id="rag-dirty" class="dirty-tag"></span></div>
+<div class="form">
     <div class="full"><label>설명</label><input type="text" id="rf-description"></div>
     <div><label>코퍼스 (data/rag/ 폴더)</label><select id="rf-corpus"></select></div>
     <div><label>임베더</label><select id="rf-embedder"><option value="ollama">Ollama 임베딩 (dense)</option><option value="none">없음 (BM25만)</option></select></div>
@@ -125,6 +181,13 @@
     <div><label>최소 유사도 (dense만)</label><input type="number" id="rf-minscore" min="0" max="1" step="0.05"></div>
     <div class="inline"><label><input type="checkbox" id="rf-hybrid"> 하이브리드 (BM25 + dense, RRF)</label></div>
     <div class="full"><label>컨텍스트 머리말 (검색 결과 앞에 붙는 지시문)</label><textarea id="rf-header" style="min-height:50px"></textarea></div>
+    <div class="full">
+      <label>코퍼스 문서 <span id="cf-summary" style="color:var(--muted)"></span></label>
+      <div class="files" id="cf-files"><div class="empty">…</div></div>
+      <div class="drop" id="cf-drop">여기에 .md / .txt / .pdf 파일을 끌어다 놓거나 <label style="color:var(--run);cursor:pointer;text-decoration:underline">파일 선택<input type="file" id="cf-input" multiple accept=".md,.txt,.markdown,.pdf" style="display:none"></label>
+        <div style="font-size:.75rem;margin-top:.2rem">PDF는 페이지별 섹션의 md로 변환됩니다. "## 제목"이 없는 파일은 파일 하나가 한 섹션이 됩니다. 업로드 후 다음 요청에서 자동 재인덱싱.</div></div>
+      <div class="tools"><input id="cf-newname" placeholder="새 코퍼스 이름 (영문/숫자/_)"><button id="cf-create">새 코퍼스 만들기</button><span id="cf-status" style="color:var(--muted);font-size:.8rem"></span></div>
+    </div>
   </div>
   <div class="tools">
     <button id="rf-reset">프리셋 값으로</button>
@@ -132,37 +195,55 @@
     <button id="rf-save">프리셋 저장</button>
     <span style="color:var(--muted);font-size:.8rem">청크 크기·임베딩 모델을 바꾸면 다음 요청에서 다시 인덱싱됩니다.</span>
   </div>
-</details>
+      </div>
+    </div>
+  </details>
 
-<details class="params" id="params-panel">
-  <summary>세부 옵션 <span id="params-summary" style="color:var(--run)"></span></summary>
-  <div class="pgrid" id="pgrid"></div>
-</details>
+  <details class="area pipe">
+    <summary><span class="tag">PIPE</span> 파이프라인 <span class="cur" id="params-summary"></span></summary>
+    <div class="body"><div id="pgrid-pipeline"></div><div id="pgrid" style="display:none"></div></div>
+  </details>
 
-<div class="card">
-  <div class="row" style="margin-bottom:.35rem"><h3 style="margin:0">진행 단계</h3><span id="elapsed"></span></div>
-  <div class="steps" id="steps">
-    <div class="step" data-k="sent"><div class="n">생성 시작</div><div class="t">-</div></div>
-    <div class="step" data-k="ttft"><div class="n">첫 토큰</div><div class="t">-</div></div>
-    <div class="step" data-k="sentence"><div class="n">첫 문장</div><div class="t">-</div></div>
-    <div class="step" data-k="audio"><div class="n">첫 음성</div><div class="t">-</div></div>
-    <div class="step" data-k="llm_done"><div class="n">LLM 완료</div><div class="t">-</div></div>
-    <div class="step" data-k="play_done"><div class="n">재생 완료</div><div class="t">-</div></div>
+  <button id="warm" title="선택한 옵션을 미리 로드하고 warmup합니다">선택한 옵션 미리 로드</button>
+</aside>
+
+<main class="main">
+  <div class="card">
+    <div class="composer">
+      <input id="msg" placeholder="메시지 입력 후 Enter, 또는 🎤 버튼을 눌러 말하기">
+      <button id="send" class="primary">전송</button>
+      <button id="mic" title="누르면 녹음 시작, 다시 누르면 녹음을 끝내고 인식합니다">🎤 말하기</button>
+      <button id="stop" disabled>재생 중단</button>
+      <button id="reset">대화 초기화</button>
+    </div>
   </div>
-  <div id="error"></div>
-  <div id="hint" style="display:none;color:var(--run);margin-top:.5rem">브라우저가 오디오 재생을 막고 있습니다. 페이지 아무 곳이나 클릭하면 재생이 시작됩니다.</div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:.35rem"><h3 style="margin:0">진행 단계</h3><span id="elapsed"></span></div>
+    <div class="steps" id="steps">
+      <div class="step" data-k="sent"><div class="n">생성 시작</div><div class="t">-</div></div>
+      <div class="step" data-k="ttft"><div class="n">첫 토큰</div><div class="t">-</div></div>
+      <div class="step" data-k="sentence"><div class="n">첫 문장</div><div class="t">-</div></div>
+      <div class="step" data-k="audio"><div class="n">첫 음성</div><div class="t">-</div></div>
+      <div class="step" data-k="llm_done"><div class="n">LLM 완료</div><div class="t">-</div></div>
+      <div class="step" data-k="play_done"><div class="n">재생 완료</div><div class="t">-</div></div>
+    </div>
+    <div id="error"></div>
+    <div id="hint" style="display:none;color:var(--run);margin-top:.5rem">브라우저가 오디오 재생을 막고 있습니다. 페이지 아무 곳이나 클릭하면 재생이 시작됩니다.</div>
+  </div>
+
+  <div class="card"><h3>대화</h3><div id="log"></div></div>
+
+  <div class="card" id="rag-card" style="display:none"><h3>검색된 근거 <span id="rag-timing" class="hint"></span></h3><div id="hits"></div></div>
+
+  <div class="card"><h3>문장별 파이프라인 <span class="hint">(클라이언트 기준 경과 시각, ms)</span></h3>
+    <table><thead><tr><th>#</th><th>문장</th><th>상태</th><th>문장 감지</th><th>음성 도착</th><th>재생 시작</th><th>길이</th></tr></thead>
+    <tbody id="sent"></tbody></table>
+  </div>
+
+  <div class="card"><h3>서버 지표 <span class="hint">(ms)</span></h3><table id="metrics"><tbody></tbody></table></div>
+</main>
 </div>
-
-<div class="card"><h3>대화</h3><div id="log"></div></div>
-
-<div class="card" id="rag-card" style="display:none"><h3>검색된 근거 <span id="rag-timing" style="font-weight:400"></span></h3><div id="hits"></div></div>
-
-<div class="card"><h3>문장별 파이프라인 (클라이언트 기준 경과 시각, ms)</h3>
-  <table><thead><tr><th>#</th><th>문장</th><th>상태</th><th>문장 감지</th><th>음성 도착</th><th>재생 시작</th><th>길이</th></tr></thead>
-  <tbody id="sent"></tbody></table>
-</div>
-
-<div class="card"><h3>서버 지표 (ms)</h3><table id="metrics"><tbody></tbody></table></div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -178,8 +259,8 @@ fetch("/options").then(r => r.json()).then(o => {
 }).then(l => { for (const k in l) if ($("#" + k).value === l[k]) setState(k, "ready"); })
   .then(() => Promise.all(["llm", "tts", "stt", "pipeline"].map(loadSchema)))
   .then(loadPrompt);
-$("#prompt").onchange = loadPrompt;
-$("#rag").onchange = () => { const on = $("#rag").value !== "none"; $("#rag-state").style.display = on ? "" : "none"; if (on) setState("rag", "wait"); $("#rag-card").style.display = on ? "" : "none"; loadRag(); };
+$("#prompt").onchange = () => { loadPrompt(); updateHeaders(); };
+$("#rag").onchange = () => { const on = $("#rag").value !== "none"; $("#rag-state").style.display = on ? "" : "none"; if (on) setState("rag", "wait"); $("#rag-card").style.display = on ? "" : "none"; loadRag(); updateHeaders(); };
 
 
 // ---- tunable parameters: schema-driven form per engine, overrides = values that differ from the preset ----
@@ -262,8 +343,41 @@ async function loadRag() {
   $("#rag-panel").style.display = name === "none" ? "none" : ""; if (name === "none") { ragInfo = null; return; }
   if (!ragMeta.corpora.length) { ragMeta = await fetch("/rag-meta").then(r => r.json());
     $("#rf-corpus").innerHTML = ragMeta.corpora.map(x => `<option>${x}</option>`).join(""); $("#rf-model").innerHTML = ragMeta.embedding_models.map(x => `<option>${x.replace(/:latest$/, "")}</option>`).join(""); }
-  ragInfo = await fetch(`/rag/${name}`).then(r => r.json()); ragFormWrite(ragInfo);
+  ragInfo = await fetch(`/rag/${name}`).then(r => r.json()); ragFormWrite(ragInfo); loadCorpusFiles();
 }
+// ---- corpus manager ----
+async function loadCorpusFiles() {
+  const name = $("#rf-corpus").value; if (!name) return;
+  const d = await fetch(`/corpus/${name}`).then(r => r.json());
+  $("#cf-summary").textContent = `(${name}: 파일 ${d.files.length}, 청크 ${d.chunks})`;
+  $("#cf-files").innerHTML = d.files.length ? d.files.map(f => `<div class="f"><span class="n">${f.name}</span><span class="m">${(f.bytes / 1024).toFixed(1)} KB · ${f.chunks}청크</span><button data-f="${f.name}" class="cf-del" title="삭제">✕</button></div>`).join("")
+    : `<div class="empty">문서가 없습니다. 파일을 올리세요.</div>`;
+  $("#cf-files").querySelectorAll(".cf-del").forEach(b => b.onclick = async () => {
+    if (!confirm(`${b.dataset.f} 을(를) 삭제할까요?`)) return;
+    await fetch(`/corpus/${name}/file/${encodeURIComponent(b.dataset.f)}`, { method: "DELETE" }); loadCorpusFiles(); $("#cf-status").textContent = "삭제됨. 다음 요청에서 재인덱싱.";
+  });
+}
+async function uploadFiles(files) {
+  const name = $("#rf-corpus").value; if (!name || !files.length) return;
+  const fd = new FormData(); for (const f of files) fd.append("files", f, f.name);
+  $("#cf-status").textContent = `업로드 중… (${files.length}개)`;
+  const r = await fetch(`/corpus/${name}/upload`, { method: "POST", body: fd }).then(r => r.json());
+  if (r.detail) { $("#cf-status").textContent = "실패: " + JSON.stringify(r.detail); return; }
+  $("#cf-status").textContent = `저장됨: ${r.saved.join(", ")} · 다음 요청에서 재인덱싱`; ragMeta.corpora = r.corpora; loadCorpusFiles();
+}
+$("#cf-input").onchange = () => { uploadFiles([...$("#cf-input").files]); $("#cf-input").value = ""; };
+const drop = $("#cf-drop");
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); }; drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); uploadFiles([...e.dataTransfer.files]); };
+$("#cf-create").onclick = async () => {
+  const n = $("#cf-newname").value.trim(); if (!n) { alert("코퍼스 이름을 입력하세요"); return; }
+  const r = await fetch(`/corpus/${n}`, { method: "POST" }).then(r => r.json());
+  if (r.detail) { alert("실패: " + JSON.stringify(r.detail)); return; }
+  ragMeta.corpora = r.corpora; $("#rf-corpus").innerHTML = r.corpora.map(x => `<option>${x}</option>`).join(""); $("#rf-corpus").value = n; $("#cf-newname").value = "";
+  ragFormChanged(); loadCorpusFiles(); $("#cf-status").textContent = `코퍼스 ${n} 생성. 문서를 올린 뒤 "프리셋 저장"으로 RAG 옵션을 만드세요.`;
+};
+$("#rf-corpus").addEventListener("change", loadCorpusFiles);
+
 ["rf-description", "rf-corpus", "rf-embedder", "rf-model", "rf-topk", "rf-chunk", "rf-overlap", "rf-minscore", "rf-hybrid", "rf-header"].forEach(id => { $("#" + id).oninput = ragFormChanged; $("#" + id).onchange = ragFormChanged; });
 $("#rf-reset").onclick = () => ragInfo && ragFormWrite(ragInfo);
 $("#rf-save").onclick = async () => {
@@ -291,6 +405,7 @@ function allOverrides() { return { llm: overridesOf("llm"), tts: overridesOf("tt
 function fmtVal(p, v) { return p.type === "float" ? Number(v).toFixed(p.step && p.step < 0.1 ? 2 : (p.step && p.step < 1 ? 2 : 1)).replace(/\.?0+$/, "") : String(v); }
 function renderParams() {
   const grid = $("#pgrid"); grid.innerHTML = "";
+  for (const k of ["llm", "tts", "stt", "pipeline"]) { const c = $("#pgrid-" + k); if (c) c.innerHTML = ""; }
   let changed = 0, reloadNeeded = [];
   for (const kind of ["llm", "tts", "stt", "pipeline"]) {
     const sc = schemas[kind]; if (!sc) continue;
@@ -324,12 +439,13 @@ function renderParams() {
       tools.innerHTML = `<button data-k="${kind}" class="preset-reset">프리셋으로</button> <input placeholder="새 프리셋 이름" data-k="${kind}" class="preset-name"> <button data-k="${kind}" class="preset-save">프리셋 저장</button>`;
       g.appendChild(tools);
     }
-    grid.appendChild(g);
+    ($("#pgrid-" + kind) || grid).appendChild(g);
   }
-  $("#params-summary").textContent = changed ? `(${changed}개 변경${reloadNeeded.length ? ", 재로드: " + reloadNeeded.join(", ") : ""})` : "";
-  grid.querySelectorAll(".preset-reset").forEach(b => b.onclick = () => { values[b.dataset.k] = {}; renderParams(); });
-  grid.querySelectorAll(".preset-save").forEach(b => b.onclick = async () => {
-    const kind = b.dataset.k, name = grid.querySelector(`.preset-name[data-k="${kind}"]`).value.trim();
+  $("#params-summary").textContent = changed ? `${changed}개 변경${reloadNeeded.length ? " · 재로드: " + reloadNeeded.join(", ") : ""}` : "";
+  updateHeaders();
+  document.querySelectorAll(".preset-reset").forEach(b => b.onclick = () => { values[b.dataset.k] = {}; renderParams(); });
+  document.querySelectorAll(".preset-save").forEach(b => b.onclick = async () => {
+    const kind = b.dataset.k, name = document.querySelector(`.preset-name[data-k="${kind}"]`).value.trim();
     if (!name) { alert("프리셋 이름을 입력하세요"); return; }
     const r = await fetch("/preset", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ kind, base: $("#" + kind).value, name, overrides: overridesOf(kind) }) }).then(r => r.json());
@@ -339,6 +455,13 @@ function renderParams() {
 }
 
 function now() { return Math.round(performance.now() - t0); }
+function updateHeaders() {
+  for (const k of ["llm", "tts", "stt", "prompt", "rag"]) {
+    const el = $("#cur-" + k); if (!el) continue;
+    const ov = (k === "llm" || k === "tts" || k === "stt") ? Object.keys(overridesOf(k)).length : 0;
+    el.textContent = $("#" + k).value + (ov ? ` · ${ov}개 변경` : "");
+  }
+}
 function setState(kind, stage, detail) {
   const b = $("#" + kind + "-state");
   b.className = "badge " + stage;
@@ -527,7 +650,7 @@ $("#reset").onclick = () => {
   history = []; $("#log").innerHTML = ""; resetSteps();
   $("#metrics tbody").innerHTML = ""; $("#elapsed").textContent = "";
 };
-for (const k of ["llm", "tts", "stt"]) $("#" + k).onchange = () => { setState(k, "wait"); loadSchema(k); };
+for (const k of ["llm", "tts", "stt"]) $("#" + k).onchange = () => { setState(k, "wait"); loadSchema(k); updateHeaders(); };
 document.addEventListener("click", () => { if (ctx && ctx.state === "suspended") ctx.resume(); });
 </script>
 </body>

@@ -1340,6 +1340,8 @@ dependencies = [
     { name = "numpy" },
     { name = "nvidia-ml-py" },
     { name = "pydantic" },
+    { name = "pypdf" },
+    { name = "python-multipart" },
     { name = "pyyaml" },
     { name = "rich" },
     { name = "sounddevice" },
@@ -1417,8 +1419,10 @@ requires-dist = [
     { name = "ollama", marker = "extra == 'ollama'", specifier = ">=0.4" },
     { name = "onnxruntime-gpu", marker = "extra == 'supertonic'", specifier = ">=1.30" },
     { name = "pydantic", specifier = ">=2.7" },
+    { name = "pypdf", specifier = ">=4.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
+    { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.0" },
     { name = "sherpa-onnx", marker = "extra == 'stt'", specifier = ">=1.12" },
@@ -2289,6 +2293,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cc/d4/f523531109ae48c9b089041e63ea5ef07d092cc021f7b563c1b64fd5aa9e/pykakasi-2.2.1.tar.gz", hash = "sha256:3a3510929a5596cae51fffa9cf78c0f742d96cebd93f726c96acee51407d18cc", size = 21751242, upload-time = "2021-07-10T01:18:24.654Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/82/15/8d2fb3ede5477821704070859e63fefb16596b56339b68460770db75f5ea/pykakasi-2.2.1-py3-none-any.whl", hash = "sha256:f2d3d12a684314d7f317314499f5b0bec4a711eef4cfc963a2ca6f5c3d68f3b3", size = 2374937, upload-time = "2021-07-10T01:18:21.752Z" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.19.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/ac/63d71aaedb59acbcdef491e6ca6469165e3771c9c74358204818fd9bc5a6/pypdf-6.19.0.tar.gz", hash = "sha256:bbc43aca292369ccc6cbc8a921991ecf2538a3587ab5a116eff06c321d647155", size = 7033266, upload-time = "2026-09-16T09:32:05.946Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/2c/c43c03eaf630435f023f1dc61ec4a4a78951ad5530a62c71cc89bde307b7/pypdf-6.19.0-py3-none-any.whl", hash = "sha256:7e5d6e730e7dae87d560a2cee218b852f6498c8be61966f3cd02ead971e48d14", size = 395480, upload-time = "2026-09-16T09:32:04.087Z" },
 ]
 
 [[package]]
