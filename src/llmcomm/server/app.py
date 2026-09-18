@@ -27,6 +27,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shutil
 import time
 from datetime import datetime
 from pathlib import Path
@@ -39,7 +40,9 @@ from fastapi.responses import HTMLResponse
 from llmcomm.core.params import PIPELINE_PARAMS, apply_params, coerce_overrides, effective_params, option_label, split_overrides
 from llmcomm.core.prompts import DEFAULT_PROMPT, build_messages, describe_prompt, list_prompts, load_prompt, prompt_from_dict, save_prompt, style_metrics
 from llmcomm.core.rag import RAG_DATA, Retriever, chunk_corpus, describe_rag, list_corpora, list_embedding_models, list_rag, load_rag, rag_from_dict, save_rag
-from llmcomm.core.registry import build, describe, list_configs, save_preset, schema
+from llmcomm.core.prompts import PROMPT_ROOT
+from llmcomm.core.rag import RAG_CONFIG
+from llmcomm.core.registry import CONFIG_ROOT, build, describe, list_configs, save_preset, schema
 from llmcomm.core.types import Message
 from llmcomm.pipeline.streaming import converse
 
@@ -195,6 +198,66 @@ def corpus_delete_file(name: str, filename: str):
     target.unlink()
     _invalidate_corpus(name)
     return corpus_files(name)
+
+
+# ---------------------------------------------------------------- deletion (presets and corpora)
+
+def _safe_name(name: str) -> str:
+    if not re.fullmatch(r"[A-Za-z0-9_\-]+", name):
+        raise HTTPException(400, "invalid name")
+    return name
+
+
+@app.delete("/preset/{kind}/{name}")
+def preset_delete(kind: str, name: str):
+    """Delete configs/<kind>/<name>.yaml (llm/tts/stt). Refuses to delete the last remaining option."""
+    if kind not in ("llm", "tts", "stt"):
+        raise HTTPException(400, "kind must be llm, tts or stt")
+    path = CONFIG_ROOT / kind / f"{_safe_name(name)}.yaml"
+    if not path.exists():
+        raise HTTPException(404, "preset not found")
+    if len(list_configs(kind)) <= 1:
+        raise HTTPException(400, "마지막 옵션은 삭제할 수 없습니다")
+    path.unlink()
+    cur = _loaded.get(kind)
+    if cur and cur[0] == name:  # engine stays loaded until another option replaces it
+        pass
+    return {"options": list_configs(kind)}
+
+
+@app.delete("/prompt/{name}")
+def prompt_delete(name: str):
+    if name == DEFAULT_PROMPT:
+        raise HTTPException(400, "default 프롬프트는 기본값으로 쓰여 삭제할 수 없습니다")
+    path = PROMPT_ROOT / f"{_safe_name(name)}.yaml"
+    if not path.exists():
+        raise HTTPException(404, "prompt not found")
+    path.unlink()
+    return {"options": list_prompts()}
+
+
+@app.delete("/rag/{name}")
+def rag_delete(name: str):
+    path = RAG_CONFIG / f"{_safe_name(name)}.yaml"
+    if not path.exists():
+        raise HTTPException(404, "rag option not found")
+    path.unlink()
+    for k in [k for k in _retrievers if k == name or k.startswith(name + "~")]:
+        _retrievers.pop(k, None)
+    return {"options": ["none"] + list_rag()}
+
+
+@app.delete("/corpus/{name}")
+def corpus_delete(name: str):
+    """Delete a corpus folder and its cached embeddings. RAG options that point at it are listed in the response."""
+    d = _corpus_dir(name)
+    users = [n for n in list_rag() if load_rag(n).corpus == name]
+    shutil.rmtree(d)
+    cache = RAG_DATA.parent.parent / "models" / "rag" / name
+    if cache.exists():
+        shutil.rmtree(cache, ignore_errors=True)
+    _invalidate_corpus(name)
+    return {"corpora": list_corpora(), "orphaned_rag_options": users}
 
 
 @app.post("/prompt/save")

@@ -37,6 +37,7 @@
   select, input, button, textarea { font: inherit; font-size: .9rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--fg); }
   button { cursor: pointer; } button:hover { background: #f3f4f6; } button:disabled { opacity: .5; cursor: default; }
   button.primary { background: var(--run); color: #fff; border-color: var(--run); } button.primary:hover { background: #1d4ed8; }
+  button.danger { color: var(--err); border-color: #f3c4c4; } button.danger:hover { background: #fef2f2; }
   .badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .75rem; color: #fff; background: var(--wait); white-space: nowrap; }
   .badge.loading, .badge.unloading { background: var(--run); } .badge.ready { background: var(--play); } .badge.error { background: var(--err); }
   #warm { width: 100%; margin-top: .2rem; }
@@ -159,6 +160,7 @@
     <button id="pf-reset">프리셋 값으로</button>
     <input id="pf-name" placeholder="새 프리셋 이름 (영문/숫자/_)">
     <button id="pf-save">프리셋 저장</button>
+    <button id="pf-del" class="danger" title="현재 선택한 프롬프트 프리셋을 삭제">현재 프리셋 삭제</button>
     <span style="color:var(--muted);font-size:.8rem">편집한 상태로 전송하면 저장 없이도 적용되며 결과에 <b>이름*</b>로 표시됩니다.</span>
   </div>
     </div>
@@ -186,13 +188,14 @@
       <div class="files" id="cf-files"><div class="empty">…</div></div>
       <div class="drop" id="cf-drop">여기에 .md / .txt / .pdf 파일을 끌어다 놓거나 <label style="color:var(--run);cursor:pointer;text-decoration:underline">파일 선택<input type="file" id="cf-input" multiple accept=".md,.txt,.markdown,.pdf" style="display:none"></label>
         <div style="font-size:.75rem;margin-top:.2rem">PDF는 페이지별 섹션의 md로 변환됩니다. "## 제목"이 없는 파일은 파일 하나가 한 섹션이 됩니다. 업로드 후 다음 요청에서 자동 재인덱싱.</div></div>
-      <div class="tools"><input id="cf-newname" placeholder="새 코퍼스 이름 (영문/숫자/_)"><button id="cf-create">새 코퍼스 만들기</button><span id="cf-status" style="color:var(--muted);font-size:.8rem"></span></div>
+      <div class="tools"><input id="cf-newname" placeholder="새 코퍼스 이름 (영문/숫자/_)"><button id="cf-create">새 코퍼스 만들기</button><button id="cf-delete" class="danger" title="현재 코퍼스 폴더와 문서, 임베딩 캐시를 삭제">이 코퍼스 삭제</button><span id="cf-status" style="color:var(--muted);font-size:.8rem"></span></div>
     </div>
   </div>
   <div class="tools">
     <button id="rf-reset">프리셋 값으로</button>
     <input id="rf-name" placeholder="새 프리셋 이름 (영문/숫자/_)">
     <button id="rf-save">프리셋 저장</button>
+    <button id="rf-del" class="danger" title="현재 선택한 RAG 옵션을 삭제 (문서는 남음)">현재 옵션 삭제</button>
     <span style="color:var(--muted);font-size:.8rem">청크 크기·임베딩 모델을 바꾸면 다음 요청에서 다시 인덱싱됩니다.</span>
   </div>
       </div>
@@ -307,6 +310,13 @@ async function loadPrompt() {
 }
 ["pf-description", "pf-persona", "pf-register", "pf-max", "pf-noemoji", "pf-nomd", "pf-ko", "pf-fewshot", "pf-extra"].forEach(id => { $("#" + id).oninput = promptFormChanged; $("#" + id).onchange = promptFormChanged; });
 $("#pf-reset").onclick = () => promptInfo && promptFormWrite(promptInfo);
+$("#pf-del").onclick = async () => {
+  const name = $("#prompt").value;
+  if (!confirm(`프롬프트 "${name}" 을(를) 삭제할까요?`)) return;
+  const r = await fetch(`/prompt/${name}`, { method: "DELETE" }).then(r => r.json());
+  if (r.detail) { alert("삭제 실패: " + JSON.stringify(r.detail)); return; }
+  $("#prompt").innerHTML = r.options.map(x => `<option>${x}</option>`).join(""); await loadPrompt(); updateHeaders();
+};
 $("#pf-save").onclick = async () => {
   const name = $("#pf-name").value.trim(); if (!name) { alert("프리셋 이름을 입력하세요"); return; }
   const r = await fetch("/prompt/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, config: promptFormRead() }) }).then(r => r.json());
@@ -380,6 +390,22 @@ $("#rf-corpus").addEventListener("change", loadCorpusFiles);
 
 ["rf-description", "rf-corpus", "rf-embedder", "rf-model", "rf-topk", "rf-chunk", "rf-overlap", "rf-minscore", "rf-hybrid", "rf-header"].forEach(id => { $("#" + id).oninput = ragFormChanged; $("#" + id).onchange = ragFormChanged; });
 $("#rf-reset").onclick = () => ragInfo && ragFormWrite(ragInfo);
+$("#rf-del").onclick = async () => {
+  const name = $("#rag").value; if (name === "none") return;
+  if (!confirm(`RAG 옵션 "${name}" 을(를) 삭제할까요? 코퍼스 문서는 남습니다.`)) return;
+  const r = await fetch(`/rag/${name}`, { method: "DELETE" }).then(r => r.json());
+  if (r.detail) { alert("삭제 실패: " + JSON.stringify(r.detail)); return; }
+  $("#rag").innerHTML = r.options.map(x => `<option>${x}</option>`).join(""); $("#rag").value = "none"; $("#rag").onchange();
+};
+$("#cf-delete").onclick = async () => {
+  const name = $("#rf-corpus").value; if (!name) return;
+  if (!confirm(`코퍼스 "${name}" 의 문서 전체와 임베딩 캐시를 삭제할까요? 되돌릴 수 없습니다.`)) return;
+  const r = await fetch(`/corpus/${name}`, { method: "DELETE" }).then(r => r.json());
+  if (r.detail) { alert("삭제 실패: " + JSON.stringify(r.detail)); return; }
+  ragMeta.corpora = r.corpora; $("#rf-corpus").innerHTML = r.corpora.map(x => `<option>${x}</option>`).join("");
+  $("#cf-status").textContent = `코퍼스 ${name} 삭제됨` + (r.orphaned_rag_options.length ? ` · 이 코퍼스를 가리키던 RAG 옵션: ${r.orphaned_rag_options.join(", ")} (코퍼스를 바꾸거나 삭제하세요)` : "");
+  ragFormChanged(); loadCorpusFiles();
+};
 $("#rf-save").onclick = async () => {
   const name = $("#rf-name").value.trim(); if (!name) { alert("프리셋 이름을 입력하세요"); return; }
   const r = await fetch("/rag/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, config: ragFormRead() }) }).then(r => r.json());
@@ -436,7 +462,7 @@ function renderParams() {
     }
     if (kind !== "pipeline") {
       const tools = document.createElement("div"); tools.className = "tools";
-      tools.innerHTML = `<button data-k="${kind}" class="preset-reset">프리셋으로</button> <input placeholder="새 프리셋 이름" data-k="${kind}" class="preset-name"> <button data-k="${kind}" class="preset-save">프리셋 저장</button>`;
+      tools.innerHTML = `<button data-k="${kind}" class="preset-reset">프리셋으로</button> <input placeholder="새 프리셋 이름" data-k="${kind}" class="preset-name"> <button data-k="${kind}" class="preset-save">프리셋 저장</button> <button data-k="${kind}" class="preset-del danger" title="현재 선택한 프리셋 파일을 삭제">현재 프리셋 삭제</button>`;
       g.appendChild(tools);
     }
     ($("#pgrid-" + kind) || grid).appendChild(g);
@@ -444,6 +470,13 @@ function renderParams() {
   $("#params-summary").textContent = changed ? `${changed}개 변경${reloadNeeded.length ? " · 재로드: " + reloadNeeded.join(", ") : ""}` : "";
   updateHeaders();
   document.querySelectorAll(".preset-reset").forEach(b => b.onclick = () => { values[b.dataset.k] = {}; renderParams(); });
+  document.querySelectorAll(".preset-del").forEach(b => b.onclick = async () => {
+    const kind = b.dataset.k, name = $("#" + kind).value;
+    if (!confirm(`${kind} 프리셋 "${name}" 을(를) 삭제할까요? (configs/${kind}/${name}.yaml)`)) return;
+    const r = await fetch(`/preset/${kind}/${name}`, { method: "DELETE" }).then(r => r.json());
+    if (r.detail) { alert("삭제 실패: " + JSON.stringify(r.detail)); return; }
+    $("#" + kind).innerHTML = r.options.map(x => `<option>${x}</option>`).join(""); values[kind] = {}; await loadSchema(kind); setState(kind, "wait"); updateHeaders();
+  });
   document.querySelectorAll(".preset-save").forEach(b => b.onclick = async () => {
     const kind = b.dataset.k, name = document.querySelector(`.preset-name[data-k="${kind}"]`).value.trim();
     if (!name) { alert("프리셋 이름을 입력하세요"); return; }
